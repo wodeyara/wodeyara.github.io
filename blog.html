@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog · Anirudh Wodeyar</title>
+  <meta name="description" content="Notes on neuroscience, signal processing, and brain oscillations by Anirudh Wodeyar." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232f6fb0'/><text x='50' y='68' font-size='52' font-family='Georgia,serif' fill='white' text-anchor='middle'>AW</text></svg>" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-inner">
+      <a class="brand" href="index.html">Anirudh Wodeyar</a>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+      <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu"><span></span></label>
+      <ul class="nav-links">
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#research">Research</a></li>
+        <li><a href="index.html#publications">Publications</a></li>
+        <li><a href="blog.html" aria-current="page">Blog</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+        <li><a href="cv.pdf">CV</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="blog-index">
+      <h2>Blog</h2>
+      <p class="section-lead">Occasional notes on my research — oscillations, real-time methods, and whatever else I am thinking about.</p>
+      <div id="post-list" class="post-list">
+        <p class="muted">Loading posts…</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Anirudh Wodeyar · Built with plain HTML &amp; CSS, hosted on GitHub Pages.</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    var listEl = document.getElementById('post-list');
+
+    function fmtDate(iso) {
+      var d = new Date(iso + 'T00:00:00');
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    }
+
+    // Opening this file directly (file://) blocks loading the post list for
+    // security reasons. Show a friendly note instead of a confusing empty page.
+    if (location.protocol === 'file:') {
+      listEl.innerHTML =
+        '<div class="notice"><strong>Local preview note.</strong> You opened this page by double-clicking the file, ' +
+        'so the browser will not load the post list (it blocks local file reads). ' +
+        'To preview the blog locally, run the site through a small web server, or simply push to GitHub and view it live — ' +
+        'it works perfectly there. Your posts themselves are safe in the <code>posts/</code> folder.</div>';
+    } else {
+      fetch('posts/posts.json')
+        .then(function (r) { return r.json(); })
+        .then(function (posts) {
+          if (!posts || !posts.length) {
+            listEl.innerHTML = '<p class="muted">No posts yet.</p>';
+            return;
+          }
+          listEl.innerHTML = posts.map(function (p) {
+            return '<a class="post-card" href="post.html?p=' + encodeURIComponent(p.slug) + '">' +
+              '<span class="post-card-date">' + fmtDate(p.date) + '</span>' +
+              '<span class="post-card-title">' + escapeHtml(p.title) + '</span>' +
+              '<span class="post-card-summary">' + escapeHtml(p.summary || '') + '</span>' +
+              '</a>';
+          }).join('');
+        })
+        .catch(function () {
+          listEl.innerHTML = '<p class="muted">Could not load posts right now.</p>';
+        });
+    }
+
+    // Close the mobile menu after tapping a link.
+    document.querySelectorAll('.nav-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        document.getElementById('nav-toggle').checked = false;
+      });
+    });
+  </script>
+</body>
+</html>

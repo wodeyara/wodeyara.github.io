@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post · Anirudh Wodeyar</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232f6fb0'/><text x='50' y='68' font-size='52' font-family='Georgia,serif' fill='white' text-anchor='middle'>AW</text></svg>" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-inner">
+      <a class="brand" href="index.html">Anirudh Wodeyar</a>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+      <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu"><span></span></label>
+      <ul class="nav-links">
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#research">Research</a></li>
+        <li><a href="index.html#publications">Publications</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+        <li><a href="cv.pdf">CV</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <article class="post" id="post">
+      <p class="muted">Loading…</p>
+    </article>
+    <p class="back-link"><a href="blog.html">← All posts</a></p>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Anirudh Wodeyar · Built with plain HTML &amp; CSS, hosted on GitHub Pages.</p>
+  </footer>
+
+  <!-- Local Markdown renderer (vendored — no external dependency). -->
+  <script src="marked.min.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    var postEl = document.getElementById('post');
+
+    function fmtDate(iso) {
+      var d = new Date(iso + 'T00:00:00');
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    }
+
+    var params = new URLSearchParams(location.search);
+    var slug = params.get('p');
+
+    if (location.protocol === 'file:') {
+      postEl.innerHTML =
+        '<div class="notice"><strong>Local preview note.</strong> You opened this page by double-clicking the file, ' +
+        'so the browser will not load the post text (it blocks local file reads). ' +
+        'To preview locally, run the site through a small web server, or push to GitHub and view it live. ' +
+        'You can always read and edit the post directly: it lives in <code>posts/' + (slug ? escapeHtml(slug) : '…') + '.md</code>.</div>';
+    } else if (!slug) {
+      postEl.innerHTML = '<p>No post specified. <a href="blog.html">Back to the blog</a>.</p>';
+    } else if (!/^[a-z0-9-]+$/i.test(slug)) {
+      // Guard against odd input in the URL.
+      postEl.innerHTML = '<p>Unknown post. <a href="blog.html">Back to the blog</a>.</p>';
+    } else {
+      Promise.all([
+        fetch('posts/posts.json').then(function (r) { return r.json(); }).catch(function () { return []; }),
+        fetch('posts/' + slug + '.md').then(function (r) {
+          if (!r.ok) throw new Error('not found');
+          return r.text();
+        })
+      ]).then(function (results) {
+        var posts = results[0], md = results[1];
+        var meta = {};
+        for (var i = 0; i < posts.length; i++) {
+          if (posts[i].slug === slug) { meta = posts[i]; break; }
+        }
+        var title = meta.title || '';
+        var date = meta.date ? fmtDate(meta.date) : '';
+        if (title) document.title = title + ' · Anirudh Wodeyar';
+
+        var header = '<header class="post-header">' +
+          (title ? '<h1>' + escapeHtml(title) + '</h1>' : '') +
+          (date ? '<p class="post-meta">' + escapeHtml(date) + '</p>' : '') +
+          '</header>';
+
+        postEl.innerHTML = header + '<div class="post-body">' + marked.parse(md) + '</div>';
+      }).catch(function () {
+        postEl.innerHTML = '<p>Sorry, this post could not be found. <a href="blog.html">Back to the blog</a>.</p>';
+      });
+    }
+
+    document.querySelectorAll('.nav-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        document.getElementById('nav-toggle').checked = false;
+      });
+    });
+  </script>
+</body>
+</html>

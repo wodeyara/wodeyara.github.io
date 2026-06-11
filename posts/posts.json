@@ -1,0 +1,20 @@
+[
+  {
+    "slug": "thalamic-epileptic-spikes",
+    "title": "Thalamic epileptic spikes disrupt spindles in epileptic encephalopathy",
+    "date": "2024-08-22",
+    "summary": "Epileptic spikes between seizures can quietly impair cognition. When they reach the thalamus, they disrupt the sleep spindles tied to memory consolidation."
+  },
+  {
+    "slug": "state-space-phase-estimator",
+    "title": "Demonstrating the state-space phase estimator",
+    "date": "2021-09-19",
+    "summary": "A short demo of estimating the phase of a neural rhythm in real time — together with a credible interval that says how certain that estimate is."
+  },
+  {
+    "slug": "structure-function-connectivity",
+    "title": "Linking structural and functional connectivity in resting-state macroscale neuroimaging",
+    "date": "2021-09-19",
+    "summary": "Functional connectivity rests on the scaffolding of anatomy. A generative model derives it from the structural connectome via the precision matrix."
+  }
+]

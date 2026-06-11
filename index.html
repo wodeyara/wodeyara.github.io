@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anirudh Wodeyar</title>
+  <meta name="description" content="Anirudh Wodeyar — Assistant Professor at Maastricht University. Statistics, signal processing, and neuroscience: methods to track, model, and understand brain oscillations." />
+  <meta name="author" content="Anirudh Wodeyar" />
+
+  <!-- Open Graph (controls how the page looks when shared on social media) -->
+  <meta property="og:title" content="Anirudh Wodeyar" />
+  <meta property="og:description" content="Statistics, signal processing, and neuroscience: methods to understand brain oscillations." />
+  <meta property="og:type" content="website" />
+
+  <link rel="stylesheet" href="style.css" />
+  <!-- Simple inline favicon (the "AW" tab icon). No extra file needed. -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232f6fb0'/><text x='50' y='68' font-size='52' font-family='Georgia,serif' fill='white' text-anchor='middle'>AW</text></svg>" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-inner">
+      <a class="brand" href="#top">Anirudh Wodeyar</a>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+      <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu"><span></span></label>
+      <ul class="nav-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#research">Research</a></li>
+        <li><a href="#publications">Publications</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="cv.pdf">CV</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===================== HERO / HEADER ===================== -->
+    <section id="top" class="hero">
+      <img
+        class="avatar"
+        src="profile.jpg"
+        alt="Anirudh Wodeyar"
+        onerror="this.outerHTML='&lt;div class=&quot;avatar avatar-fallback&quot;&gt;AW&lt;/div&gt;'"
+      />
+      <div class="intro">
+        <h1>Anirudh Wodeyar</h1>
+        <p class="tagline">Assistant Professor</p>
+        <p class="affil">Department of Advanced Computing Sciences · Maastricht University</p>
+        <p class="areas">Statistics &nbsp;·&nbsp; Signal Processing &nbsp;·&nbsp; Neuroscience</p>
+        <div class="links">
+          <a class="pill" href="mailto:ani.wodeyar@maastrichtuniversity.nl">Email</a>
+          <a class="pill" href="https://scholar.google.com/citations?user=1SWN6CoAAAAJ" target="_blank" rel="noopener">Google&nbsp;Scholar</a>
+          <a class="pill" href="https://www.researchgate.net/profile/Anirudh-Wodeyar" target="_blank" rel="noopener">ResearchGate</a>
+          <a class="pill" href="https://twitter.com/A_Wodeyar" target="_blank" rel="noopener">Twitter/X</a>
+          <a class="pill" href="cv.pdf">CV</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ABOUT ===================== -->
+    <section id="about">
+      <h2>About</h2>
+      <p>
+        I am an Assistant Professor in the Department of Advanced Computing Sciences at
+        Maastricht University. I bring together a background in computer science, statistics,
+        and signal processing to develop methods that help us better understand the brain —
+        and potentially move brain dynamics toward healthier states.
+      </p>
+      <p>
+        I enjoy thinking about oscillations: in particular, about how they are generated and
+        what characterizes them in the brain. Much of my work develops statistical and
+        signal-processing tools to track, model, and analyze neural rhythms in real time,
+        with applications across epilepsy, sleep, and stroke recovery.
+      </p>
+    </section>
+
+    <!-- ===================== RESEARCH ===================== -->
+    <section id="research">
+      <h2>Research</h2>
+      <p class="section-lead">
+        My research sits at the intersection of <strong>systems neuroscience</strong> and
+        <strong>real-time signal processing</strong>, with recurring themes of oscillations,
+        networks, epilepsy and sleep. A few directions I am currently excited about:
+      </p>
+
+      <div class="cards">
+        <article class="card">
+          <h3>The difficulty of estimating networks from time-series</h3>
+          <p>
+            Estimating networks is critical across a range of fields but especially in neuroscience. 
+            Our current work looks at how we can estimate networks from point-processes such as those that 
+            represent epileptic spike events. 
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>State-space modeling for non-sinusoidal and bursty rhythms</h3>
+          <p>
+            By modeling oscillations as damped harmonic oscillators with time-varying
+            frequencies driven by noise, a state-space framework lets us track — in real time —
+            rhythms that are poorly represented as simple band-limited oscillations.
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>Constraints from sleep oscillations</h3>
+          <p>
+            Sleep rhythms have been implicated in overnight memory consolidation. How can we
+            quantify this in a way that gives explanatory power to the rhythms themselves,
+            rather than only to the neuronal spikes that support them?
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================== PUBLICATIONS ===================== -->
+    <section id="publications">
+      <h2>Publications</h2>
+      <p class="section-lead">
+        A selection of my work is below. For the complete and most up-to-date list, see my
+        <a href="https://scholar.google.com/citations?user=1SWN6CoAAAAJ" target="_blank" rel="noopener">Google&nbsp;Scholar profile</a>.
+        <span class="muted">(Author names in <strong>bold</strong> indicate my contribution.)</span>
+      </p>
+
+      <ol class="pub-list">
+        <li>
+          <span class="pub-badge preprint">Conference</span>
+          <span class="pub-title">Real-time sub-cycle oscillatory beta burst detection.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Karel J, Peeters R.</span>
+          <span class="pub-venue">IEEE EMBC 2026.</span>
+        </li>
+        <li>
+          <span class="pub-badge preprint">Preprint</span>
+          <span class="pub-title">A hierarchical cascade of sleep rhythms drives memory consolidation in humans and is disrupted in epilepsy.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Chinappen D, Kwon H, Shi W, Richardson M, Kramer MA, et&nbsp;al.</span>
+          <span class="pub-venue">bioRxiv, 2025.</span>
+        </li>
+        <li>
+          <span class="pub-title">Thalamic engagement by epileptic spikes as a mechanism for widespread slow oscillation–spindle decoupling.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Kramer MA, Chu CJ.</span>
+          <span class="pub-venue">Epilepsia, 66(7):2600, 2025.</span>
+        </li>
+        <li>
+          <span class="pub-title">Auditory-evoked changes in slow oscillations and spindles correlate with memory consolidation in children with epilepsy and controls.</span>
+          <span class="pub-authors">Kwon H, Chinappen DM, Kinard EA, Goodman SK, Shi W, … <strong>Wodeyar A</strong>.</span>
+          <span class="pub-venue">Clinical Neurophysiology, 2025.</span>
+        </li>
+        <li>
+          <span class="pub-badge preprint">Preprint</span>
+          <span class="pub-title">Structural and EEG motor networks distinguish level of motor impairment after stroke.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Zhou Z, Cramer SC, Srinivasan R.</span>
+          <span class="pub-venue">medRxiv, 2025.</span>
+        </li>
+        <li>
+          <span class="pub-badge">Conference</span>
+          <span class="pub-title">Real-time navigational intent detection from hippocampal EEG: a proof of concept.</span>
+          <span class="pub-authors">Savvides N, Bonizzi P, Herff C, <strong>Wodeyar A</strong>.</span>
+          <span class="pub-venue">37th Benelux Conference on Artificial Intelligence (BNAIC), 2025.</span>
+        </li>
+        <li>
+          <span class="pub-title">Thalamic epileptic spikes disrupt sleep spindles in patients with epileptic encephalopathy.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Chinappen D, Mylonas D, Baxter B, Manoach DS, Eden UT, et&nbsp;al.</span>
+          <span class="pub-venue">Brain, 147(8):2803–2816, 2024.</span>
+        </li>
+        <li>
+          <span class="pub-title">Different methods to estimate the phase of neural rhythms agree but only during times of low uncertainty.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Marshall FA, Chu CJ, Eden UT, Kramer MA.</span>
+          <span class="pub-venue">eNeuro, 10(11), 2023.</span>
+        </li>
+        <li>
+          <span class="pub-title">Structural connectome constrained graphical lasso for MEG partial coherence.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
+          <span class="pub-venue">Network Neuroscience, 6(4):1219–1242, 2022.</span>
+        </li>
+        <li>
+          <span class="pub-title">Sensory stimulation-based protection from impending stroke following MCA occlusion is correlated with desynchronization of widespread spontaneous local field potentials.</span>
+          <span class="pub-authors">Rasheed W, Srinivasan R, <strong>Wodeyar A</strong>, Frostig RD.</span>
+          <span class="pub-venue">Scientific Reports, 12(1):1744, 2022.</span>
+        </li>
+        <li>
+          <span class="pub-title">A state-space modeling approach to real-time phase estimation.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Schatza M, Widge AS, Eden UT, Kramer MA.</span>
+          <span class="pub-venue">eLife, 10:e68803, 2021.</span>
+        </li>
+        <li>
+          <span class="pub-title">Coherent neural oscillations inform early stroke motor recovery.</span>
+          <span class="pub-authors">Cassidy JM, <strong>Wodeyar A</strong>, Srinivasan R, Cramer SC.</span>
+          <span class="pub-venue">Human Brain Mapping, 42(17):5636–5647, 2021.</span>
+        </li>
+        <li>
+          <span class="pub-title">Low-frequency oscillations are a biomarker of injury and recovery after stroke.</span>
+          <span class="pub-authors">Cassidy JM, <strong>Wodeyar A</strong>, Wu J, Kaur K, Masuda AK, … Srinivasan R.</span>
+          <span class="pub-venue">Stroke, 51(5):1442–1450, 2020.</span>
+        </li>
+        <li>
+          <span class="pub-title">Damage to the structural connectome reflected in resting-state fMRI functional connectivity.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Cassidy JM, Cramer SC, Srinivasan R.</span>
+          <span class="pub-venue">Network Neuroscience, 4(4):1197–1218, 2020.</span>
+        </li>
+        <li>
+          <span class="pub-title">Rapid development of strong, persistent, spatiotemporally extensive cortical synchrony and underlying oscillations following acute MCA focal ischemia.</span>
+          <span class="pub-authors">Wann EG, <strong>Wodeyar A</strong>, Srinivasan R, Frostig RD.</span>
+          <span class="pub-venue">Scientific Reports, 10(1):21441, 2020.</span>
+        </li>
+        <li>
+          <span class="pub-badge preprint">Preprint</span>
+          <span class="pub-title">Network structure during encoding predicts working memory performance.</span>
+          <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
+          <span class="pub-venue">bioRxiv, 2018.</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===================== CONTACT ===================== -->
+    <section id="contact">
+      <h2>Contact</h2>
+      <p class="section-lead">
+        I am always happy to talk about oscillations, real-time methods, and potential
+        collaborations or student projects.
+      </p>
+      <ul class="contact-list">
+        <li><span class="contact-label">Email</span><a href="mailto:ani.wodeyar@maastrichtuniversity.nl">ani.wodeyar@maastrichtuniversity.nl</a></li>
+        <li><span class="contact-label">Office</span><span>Department of Advanced Computing Sciences, Maastricht University</span></li>
+        <li><span class="contact-label">Scholar</span><a href="https://scholar.google.com/citations?user=1SWN6CoAAAAJ" target="_blank" rel="noopener">Google Scholar</a></li>
+        <li><span class="contact-label">ResearchGate</span><a href="https://www.researchgate.net/profile/Anirudh-Wodeyar" target="_blank" rel="noopener">researchgate.net/profile/Anirudh-Wodeyar</a></li>
+        <li><span class="contact-label">BlueSky</span><a href="https://bsky.app/profile/aniwodeyar.bsky.social" target="_blank" rel="noopener">@aniwodeyar</a></li>
+        <li><span class="contact-label">Photography</span><a href="https://instagram.com/anirudhw" target="_blank" rel="noopener">@anirudhw on Instagram</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Anirudh Wodeyar · Built with plain HTML &amp; CSS, hosted on GitHub Pages.</p>
+  </footer>
+
+  <script>
+    // Fill the current year in the footer automatically.
+    document.getElementById('year').textContent = new Date().getFullYear();
+    // Close the mobile menu after clicking a link.
+    document.querySelectorAll('.nav-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        document.getElementById('nav-toggle').checked = false;
+      });
+    });
+  </script>
+</body>
+</html>
