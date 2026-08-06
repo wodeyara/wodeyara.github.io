@@ -1,4 +1,4 @@
-A paper I have been working on for a few years is finally published! It came out last month in PNAS and is titled: "A hierarchical cascade of sleep rhythms supports motor memory and is hijacked by epileptic spikes in human epilepsy" [link in comments].
+A paper I have been working on for a few years is finally published! It came out last month in PNAS and is titled: "<a href="https://www.pnas.org/doi/10.1073/pnas.2517454123" target="_blank" rel="noopener noreffer">A hierarchical cascade of sleep rhythms supports motor memory and is hijacked by epileptic spikes in human epilepsy</a>" [<a href="https://pubmed.ncbi.nlm.nih.gov/40654700/" target="_blank" rel="noopener noreffer">Free Version</a>]
 
 This paper was both a joy and a terror to work on. I loved staying with the data and puzzling out what is happening in the epileptic #brain during #sleep, but also in a healthy brain. The window I like looking through (#eeg or #lfp) shows #oscillations - periodic fluctuations in voltage measured from neuronal populations. 
 
