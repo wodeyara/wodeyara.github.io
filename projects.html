@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Side Projects · Anirudh Wodeyar</title>
+  <meta name="description" content="Side projects by Anirudh Wodeyar — data explorers, visual experiments, and things built out of curiosity rather than for publication." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232f6fb0'/><text x='50' y='68' font-size='52' font-family='Georgia,serif' fill='white' text-anchor='middle'>AW</text></svg>" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-inner">
+      <a class="brand" href="index.html">Anirudh Wodeyar</a>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+      <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu"><span></span></label>
+      <ul class="nav-links">
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#research">Research</a></li>
+        <li><a href="index.html#publications">Publications</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="projects.html" aria-current="page">Side Projects</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+        <li><a href="cv.pdf">CV</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="projects">
+      <h2>Side Projects</h2>
+      <p class="section-lead">
+        Things I have built out of curiosity rather than for publication — data explorers,
+        visual experiments, and the occasional attempt to make an idea something you can
+        actually poke at.
+      </p>
+
+      <!-- ===================== FERTILITY EXPLORER ===================== -->
+      <article class="project">
+        <h3><a href="https://www.anirudhwodeyar.com/fertilityAcrossWorld/" target="_blank" rel="noopener noreferrer">Unexplained fertility explorer</a></h3>
+        <p class="project-meta">Interactive data explorer · 2026</p>
+        <p>
+          Pick the factors you think should explain fertility — GDP per capita, female schooling,
+          labour-force participation, contraceptive prevalence, child mortality, urbanisation,
+          connectivity — and the app fits a simple model of fertility rate on your selection and
+          maps what it fails to explain, country by country. It also includes a new, experimental
+          predictor I am calling the <strong>Possibility Index</strong>: a rough measure of the
+          opportunity a place seems to offer, built from amenity density, connectivity, population
+          density, and net migration. There is a US-state view too, fit as its own separate model.
+        </p>
+        <p class="muted">
+          More on why I built it in the <a href="post.html?p=fertility-explorer">blog post</a>.
+        </p>
+      </article>
+
+      <!-- ===================== TIME PERCEPTION VIDEO ===================== -->
+      <article class="project">
+        <h3><a href="https://vimeo.com/559961383" target="_blank" rel="noopener noreferrer">Time Silently/Saliently Decaying</a></h3>
+        <p class="project-meta">Video experiment · 2021</p>
+        <p>
+          A short video about the felt duration of time. Both halves have identical content and
+          identical length, but in the first half the most salient parts of each frame have been
+          stripped out (using the SaliencyToolbox, then handled with considerable artistic
+          licence). As you watch, pay attention to how long each half <em>feels</em>. Not a
+          controlled demonstration — an invitation to notice something.
+        </p>
+        <div class="video-embed">
+          <iframe
+            src="https://player.vimeo.com/video/559961383"
+            title="Time Silently/Saliently Decaying"
+            frameborder="0"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Anirudh Wodeyar · Built with plain HTML &amp; CSS, hosted on GitHub Pages.</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    // Close the mobile menu after tapping a link.
+    document.querySelectorAll('.nav-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        document.getElementById('nav-toggle').checked = false;
+      });
+    });
+  </script>
+</body>
+</html>
