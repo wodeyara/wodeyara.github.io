@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anirudh Wodeyar</title>
-  <meta name="description" content="Anirudh Wodeyar — Assistant Professor at Maastricht University. Statistics, signal processing, and neuroscience: methods to track, model, and understand brain oscillations." />
+  <meta name="description" content="Anirudh Wodeyar — Assistant Professor of Statistical Learning at Maastricht University. Real-time statistical and signal-processing methods to track, model and move brain rhythms, with applications in epilepsy, Parkinson's disease, sleep and stroke." />
   <meta name="author" content="Anirudh Wodeyar" />
 
   <!-- Open Graph (controls how the page looks when shared on social media) -->
@@ -45,7 +45,7 @@
       />
       <div class="intro">
         <h1>Anirudh Wodeyar</h1>
-        <p class="tagline">Assistant Professor</p>
+        <p class="tagline">Assistant Professor of Statistical Learning</p>
         <p class="affil">Department of Advanced Computing Sciences · Maastricht University</p>
         <p class="areas">Statistics &nbsp;·&nbsp; Signal Processing &nbsp;·&nbsp; Neuroscience</p>
         <div class="links">
@@ -62,16 +62,57 @@
     <section id="about">
       <h2>About</h2>
       <p>
-        I am an Assistant Professor in the Department of Advanced Computing Sciences at
-        Maastricht University. I bring together a background in computer science, statistics,
-        and signal processing to develop methods that help us better understand the brain —
-        and potentially move brain dynamics toward healthier states.
+        My research goal is to give people back agency. Epilepsy and Parkinson's disease take it
+        away: seizures and epileptic spikes interrupt a life without warning, and altered rhythms
+        in deep brain structures erode motor control. Getting that agency back means tracking the
+        dynamics the brain is governed by accurately enough to move them, and to move them
+        somewhere better. I am an Assistant Professor of Statistical Learning in the Department of
+        Advanced Computing Sciences at Maastricht University, where I build the statistical and
+        signal-processing tools that make this possible.
       </p>
       <p>
-        I enjoy thinking about oscillations: in particular, about how they are generated and
-        what characterizes them in the brain. Much of my work develops statistical and
-        signal-processing tools to track, model, and analyze neural rhythms,
-        with applications across epilepsy, sleep, and stroke recovery.
+        <strong>Tracking rhythms in real time.</strong> I introduced a state-space approach to
+        real-time phase estimation (<em>eLife</em>, 2021). It treats each brain rhythm as a latent
+        state with per-sample uncertainty, instead of something to filter out of the signal.
+        Independent groups have since adopted it, benchmarked against it or extended it. I then
+        showed that phase is not uniquely defined for real signals, so closed-loop use needs
+        uncertainty estimates (<em>eNeuro</em>, 2023). I am now extending this into a general
+        framework, the State-Space Model of Rhythms. Its first extension detects beta bursts in
+        Parkinson's disease sample by sample (IEEE EMBC 2026, oral presentation).
+      </p>
+      <p>
+        <strong>Resolving how rhythms drive one another.</strong> I develop methods that infer
+        brain networks: a connectome-constrained graphical lasso for MEG, and a generative
+        structure–function model of stroke damage. With my students I extended this to sparse
+        event data. Group-lasso point-process models infer directed epileptic spike networks to
+        help localise where seizures start (EUSIPCO 2026).
+      </p>
+      <p>
+        <strong>Methods that change what others can measure.</strong> Analytic tools I contributed
+        helped establish low-frequency oscillations as a biomarker of injury and recovery after
+        stroke (<em>Stroke</em>, 2020), my most-cited work. I showed that thalamic epileptic spikes
+        disrupt sleep spindles (<em>Brain</em>, 2024). I also showed that a cascade of sleep rhythms
+        supporting motor memory is hijacked by epileptic spikes (<em>PNAS</em>, 2026). This work was
+        recognised with the American Epilepsy Society Young Investigator Award (2024), an AES
+        Fellowship (2023) and an Epilepsy Foundation New England Blue Skies award as co-PI (2023).
+      </p>
+      <p>
+        <strong>Teaching and mentoring.</strong> I coordinate quantitative courses across three
+        bachelor's programmes (Data Science &amp; AI, Computer Science, Brain Science). I bring
+        students in as collaborators rather than assistants. They have first-authored work at
+        EUSIPCO, BNAIC and FENS, several came back to do their master's theses with me.
+      </p>
+      <p>
+        <strong>Open science.</strong> I treat released code as part of the result, because a
+        real-time method nobody can inspect cannot be trusted. I publish open access wherever I
+        can, and I write for a general audience about technology and society, including a piece in
+        <a href="https://www.thehindu.com/sci-tech/science/giant-artificial-intelligence-high-modernism-diversity/article66896382.ece" target="_blank" rel="noopener"><em>The Hindu</em></a>
+        on what we lose with "giant AI".
+      </p>
+      <p>
+        Before Maastricht, I was a postdoctoral researcher at Boston University and at
+        Massachusetts General Hospital / Harvard Medical School, after a PhD at UC Irvine with
+        Ramesh Srinivasan.
       </p>
     </section>
 
@@ -118,97 +159,173 @@
     <section id="publications">
       <h2>Publications</h2>
       <p class="section-lead">
-        A selection of my work is below. For the complete and most up-to-date list, see my
+        My work grouped by theme, newest first within each group. For citation counts, see my
         <a href="https://scholar.google.com/citations?user=1SWN6CoAAAAJ" target="_blank" rel="noopener">Google&nbsp;Scholar profile</a>.
-        <span class="muted">(Author names in <strong>bold</strong> indicate my contribution; titles link to the freely available version.)</span>
+        <span class="muted">(My name is in <strong>bold</strong>; titles link to the freely available version where there is one.)</span>
       </p>
 
-      <ol class="pub-list">
-        <li>
-          <span class="pub-badge preprint">Conference</span>
-          <span class="pub-title"><a href="https://doi.org/10.64898/2026.05.19.726185" target="_blank" rel="noopener">Real-time sub-cycle oscillatory beta burst detection.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Karel J, Peeters R.</span>
-          <span class="pub-venue">IEEE EMBC 2026.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://www.pnas.org/doi/10.1073/pnas.2517454123" target="_blank" rel="noopener">A hierarchical cascade of sleep rhythms supports motor memory and is hijacked by epileptic spikes in human epilepsy.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Chinappen D, Kwon H, Shi W, Richardson RM, Kramer MA, Chu CJ.</span>
-          <span class="pub-venue">PNAS, 123(27):e2517454123, 2026. <a href="https://doi.org/10.1101/2025.05.06.652436" target="_blank" rel="noopener">Free preprint</a></span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12290992/" target="_blank" rel="noopener">Thalamic engagement by epileptic spikes as a mechanism for widespread slow oscillation–spindle decoupling.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Kramer MA, Chu CJ.</span>
-          <span class="pub-venue">Epilepsia, 66(7):2600, 2025.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12820947/" target="_blank" rel="noopener">Auditory-evoked changes in slow oscillations and spindles correlate with memory consolidation in children with epilepsy and controls.</a></span>
-          <span class="pub-authors">Kwon H, Chinappen DM, Kinard EA, Goodman SK, ... <strong>Wodeyar A</strong>..., Chu CJ </span>
-          <span class="pub-venue">Clinical Neurophysiology, 2025.</span>
-        </li>
-        <li>
-          <span class="pub-badge preprint">Preprint</span>
-          <span class="pub-title"><a href="https://doi.org/10.1101/2025.10.08.25337630" target="_blank" rel="noopener">Structural and EEG motor networks distinguish level of motor impairment after stroke.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Zhou Z, Cramer SC, Srinivasan R.</span>
-          <span class="pub-venue">medRxiv, 2025.</span>
-        </li>
-        <li>
-          <span class="pub-badge">Conference</span>
-          <span class="pub-title">Real-time navigational intent detection from hippocampal EEG: a proof of concept.</span>
-          <span class="pub-authors">Savvides N, Bonizzi P, Herff C, <strong>Wodeyar A</strong>.</span>
-          <span class="pub-venue">37th Benelux Conference on Artificial Intelligence (BNAIC), 2025.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11492493/" target="_blank" rel="noopener">Thalamic epileptic spikes disrupt sleep spindles in patients with epileptic encephalopathy.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Chinappen D, Mylonas D, Baxter B, Manoach DS, Eden UT, Kramer MA, Chu CJ</span>
-          <span class="pub-venue">Brain, 147(8):2803–2816, 2024.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10626504/" target="_blank" rel="noopener">Different methods to estimate the phase of neural rhythms agree but only during times of low uncertainty.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Marshall FA, Chu CJ, Eden UT, Kramer MA.</span>
-          <span class="pub-venue">eNeuro, 10(11), 2023.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11117092/" target="_blank" rel="noopener">Structural connectome constrained graphical lasso for MEG partial coherence.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
-          <span class="pub-venue">Network Neuroscience, 6(4):1219–1242, 2022.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8810838/" target="_blank" rel="noopener">Sensory stimulation-based protection from impending stroke following MCA occlusion is correlated with desynchronization of widespread spontaneous local field potentials.</a></span>
-          <span class="pub-authors">Rasheed W, <strong>Wodeyar A</strong>, Srinivasan R, Frostig RD.</span>
-          <span class="pub-venue">Scientific Reports, 12(1):1744, 2022.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8536256/" target="_blank" rel="noopener">A state-space modeling approach to real-time phase estimation.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Schatza M, Widge AS, Eden UT, Kramer MA.</span>
-          <span class="pub-venue">eLife, 10:e68803, 2021.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8559506/" target="_blank" rel="noopener">Coherent neural oscillations inform early stroke motor recovery.</a></span>
-          <span class="pub-authors">Cassidy JM, <strong>Wodeyar A</strong>, Srinivasan R, Cramer SC.</span>
-          <span class="pub-venue">Human Brain Mapping, 42(17):5636–5647, 2021.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7188582/" target="_blank" rel="noopener">Low-frequency oscillations are a biomarker of injury and recovery after stroke.</a></span>
-          <span class="pub-authors">Cassidy JM, <strong>Wodeyar A</strong>, Wu J, Kaur K, Masuda AK, … Srinivasan R, Cramer SC.</span>
-          <span class="pub-venue">Stroke, 51(5):1442–1450, 2020.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7781612/" target="_blank" rel="noopener">Damage to the structural connectome reflected in resting-state fMRI functional connectivity.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Cassidy JM, Cramer SC, Srinivasan R.</span>
-          <span class="pub-venue">Network Neuroscience, 4(4):1197–1218, 2020.</span>
-        </li>
-        <li>
-          <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7722868/" target="_blank" rel="noopener">Rapid development of strong, persistent, spatiotemporally extensive cortical synchrony and underlying oscillations following acute MCA focal ischemia.</a></span>
-          <span class="pub-authors">Wann EG, <strong>Wodeyar A</strong>, Srinivasan R, Frostig RD.</span>
-          <span class="pub-venue">Scientific Reports, 10(1):21441, 2020.</span>
-        </li>
-        <li>
-          <span class="pub-badge preprint">Preprint</span>
-          <span class="pub-title"><a href="https://doi.org/10.1101/409615" target="_blank" rel="noopener">Network structure during encoding predicts working memory performance.</a></span>
-          <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
-          <span class="pub-venue">bioRxiv, 2018.</span>
-        </li>
-      </ol>
+      <!-- ---------- Real-time tracking of rhythms ---------- -->
+      <div class="pub-group">
+        <h3>Tracking rhythms in real time</h3>
+        <ol class="pub-list">
+          <li>
+            <span class="pub-badge">Conference</span>
+            <span class="pub-title"><a href="https://doi.org/10.64898/2026.05.19.726185" target="_blank" rel="noopener">Real-time sub-cycle oscillatory beta burst detection.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Karel J, Peeters R.</span>
+            <span class="pub-venue">IEEE EMBC 2026 (oral presentation).</span>
+            <span class="pub-summary">Adds a switching layer to the state-space rhythm model so that beta bursts in Parkinson's disease can be detected within a single cycle, as the data arrive.</span>
+          </li>
+          <li>
+            <span class="pub-badge">Conference</span>
+            <span class="pub-title">Real-time navigational intent detection from hippocampal EEG: a proof of concept.</span>
+            <span class="pub-authors">Savvides N, Bonizzi P, Herff C, <strong>Wodeyar A</strong>.</span>
+            <span class="pub-venue">37th Benelux Conference on Artificial Intelligence (BNAIC), 2025.</span>
+            <span class="pub-summary">A student-led proof of concept that decodes where a person intends to navigate from hippocampal EEG in real time.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10626504/" target="_blank" rel="noopener">Different methods to estimate the phase of neural rhythms agree but only during times of low uncertainty.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Marshall FA, Chu CJ, Eden UT, Kramer MA.</span>
+            <span class="pub-venue">eNeuro, 10(11), 2023.</span>
+            <span class="pub-summary">Shows that phase is not uniquely defined for real signals: standard estimators disagree whenever uncertainty is high, so closed-loop use needs uncertainty estimates.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8536256/" target="_blank" rel="noopener">A state-space modeling approach to real-time phase estimation.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Schatza M, Widge AS, Eden UT, Kramer MA.</span>
+            <span class="pub-venue">eLife, 10:e68803, 2021.</span>
+            <span class="pub-summary">Introduces the state-space phase estimator: each rhythm is tracked as a latent oscillator, giving its phase sample by sample, with uncertainty and without windowing.</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- ---------- Networks ---------- -->
+      <div class="pub-group">
+        <h3>Inferring brain networks</h3>
+        <ol class="pub-list">
+          <li>
+            <span class="pub-badge">Conference</span>
+            <span class="pub-title"><a href="https://eurasip.org/Proceedings/Eusipco/Eusipco2026/pdfs/0001342.pdf" target="_blank" rel="noopener">Directed epileptic spike network inference with group-lasso regularised point-process GLMs.</a></span>
+            <span class="pub-authors">Delfo Furno LL, Kelly L, Tsikhanovich G, Savvides N, Pradas A, Sankar S, Gommer E, Karel J, <strong>Wodeyar A</strong>.</span>
+            <span class="pub-venue">34th European Signal Processing Conference (EUSIPCO), Bruges, 2026.</span>
+            <span class="pub-summary">Student-led work that infers directed networks from sparse epileptic spike trains more accurately than Granger-causality baselines, to help localise where seizures start.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11117092/" target="_blank" rel="noopener">Structural connectome constrained graphical lasso for MEG partial coherence.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
+            <span class="pub-venue">Network Neuroscience, 6(4):1219–1242, 2022.</span>
+            <span class="pub-summary">Uses the brain's anatomical wiring as a constraint in a graphical lasso to estimate direct (partial) coherence between MEG sources.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7781612/" target="_blank" rel="noopener">Damage to the structural connectome reflected in resting-state fMRI functional connectivity.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Cassidy JM, Cramer SC, Srinivasan R.</span>
+            <span class="pub-venue">Network Neuroscience, 4(4):1197–1218, 2020.</span>
+            <span class="pub-summary">A generative structure–function model showing how stroke damage to the structural connectome shows up in resting-state fMRI connectivity.</span>
+          </li>
+          <li>
+            <span class="pub-badge preprint">Preprint</span>
+            <span class="pub-title"><a href="https://doi.org/10.1101/409615" target="_blank" rel="noopener">Network structure during encoding predicts working memory performance.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
+            <span class="pub-venue">bioRxiv, 2018.</span>
+            <span class="pub-summary">Shows that the structure of EEG functional networks while items are being encoded predicts how well they are later held in working memory.</span>
+          </li>
+          <li>
+            <span class="pub-badge preprint">Manuscript</span>
+            <span class="pub-title">Functional connectivity using complex-Gaussian graphical models of EEG.</span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Srinivasan R.</span>
+            <span class="pub-venue">2017.</span>
+            <span class="pub-summary">Graphical models for complex-valued EEG Fourier coefficients that separate direct from indirect functional connections.</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- ---------- Sleep and epilepsy ---------- -->
+      <div class="pub-group">
+        <h3>Sleep rhythms and epilepsy</h3>
+        <ol class="pub-list">
+          <li>
+            <span class="pub-title"><a href="https://www.pnas.org/doi/10.1073/pnas.2517454123" target="_blank" rel="noopener">A hierarchical cascade of sleep rhythms supports motor memory and is hijacked by epileptic spikes in human epilepsy.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Chinappen D, Kwon H, Shi W, Richardson RM, Kramer MA, Chu CJ.</span>
+            <span class="pub-venue">PNAS, 123(27):e2517454123, 2026. <a href="https://doi.org/10.1101/2025.05.06.652436" target="_blank" rel="noopener">Free preprint</a></span>
+            <span class="pub-summary">Shows that slow oscillations, spindles and ripples form a cascade across brain regions that supports motor memory, and that epileptic spikes hijack it. Recognised with the AES Young Investigator Award.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12290992/" target="_blank" rel="noopener">Thalamic engagement by epileptic spikes as a mechanism for widespread slow oscillation–spindle decoupling.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Kramer MA, Chu CJ.</span>
+            <span class="pub-venue">Epilepsia, 66(7):2600, 2025.</span>
+            <span class="pub-summary">Shows that when a thalamic epileptic spike coincides with a cortical slow oscillation, thalamic spindles are suppressed, across epilepsy types and ages.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12820947/" target="_blank" rel="noopener">Auditory-evoked changes in slow oscillations and spindles correlate with memory consolidation in children with epilepsy and controls.</a></span>
+            <span class="pub-authors">Kwon H, Chinappen DM, <strong>Wodeyar A</strong>, Kinard EA, Goodman SK, Shi W, Baxter BS, Manoach DS, Kramer MA, Chu CJ.</span>
+            <span class="pub-venue">Clinical Neurophysiology, 2025.</span>
+            <span class="pub-summary">Sound played during sleep changes slow oscillations and spindles, and the size of those changes tracks overnight memory consolidation in children with and without epilepsy.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11492493/" target="_blank" rel="noopener">Thalamic epileptic spikes disrupt sleep spindles in patients with epileptic encephalopathy.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>, Chinappen D, Mylonas D, Baxter B, Manoach DS, Eden UT, Kramer MA, Chu CJ.</span>
+            <span class="pub-venue">Brain, 147(8):2803–2816, 2024.</span>
+            <span class="pub-summary">Uses point-process models of thalamic and cortical recordings to show that epileptic spikes in the thalamus disrupt the sleep spindles thought to support memory.</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- ---------- Stroke ---------- -->
+      <div class="pub-group">
+        <h3>Stroke injury and recovery</h3>
+        <ol class="pub-list">
+          <li>
+            <span class="pub-badge preprint">Preprint</span>
+            <span class="pub-title"><a href="https://doi.org/10.1101/2025.10.08.25337630" target="_blank" rel="noopener">Structural and EEG motor networks distinguish level of motor impairment after stroke.</a></span>
+            <span class="pub-authors">Zhou Z, <strong>Wodeyar A</strong>, Cramer SC, Srinivasan R.</span>
+            <span class="pub-venue">medRxiv, 2025.</span>
+            <span class="pub-summary">Combines structural and EEG motor-network measures to tell apart patients with different levels of motor impairment after stroke.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8810838/" target="_blank" rel="noopener">Sensory stimulation-based protection from impending stroke following MCA occlusion is correlated with desynchronization of widespread spontaneous local field potentials.</a></span>
+            <span class="pub-authors">Rasheed W, <strong>Wodeyar A</strong>, Srinivasan R, Frostig RD.</span>
+            <span class="pub-venue">Scientific Reports, 12(1):1744, 2022.</span>
+            <span class="pub-summary">In an animal model, sensory stimulation that protects against an impending stroke goes together with desynchronised cortical activity.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8559506/" target="_blank" rel="noopener">Coherent neural oscillations inform early stroke motor recovery.</a></span>
+            <span class="pub-authors">Cassidy JM, <strong>Wodeyar A</strong>, Srinivasan R, Cramer SC.</span>
+            <span class="pub-venue">Human Brain Mapping, 42(17):5636–5647, 2021.</span>
+            <span class="pub-summary">EEG coherence in the motor network in the first days after stroke helps predict how much motor function patients recover.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7188582/" target="_blank" rel="noopener">Low-frequency oscillations are a biomarker of injury and recovery after stroke.</a></span>
+            <span class="pub-authors">Cassidy JM, <strong>Wodeyar A</strong>, Wu J, Kaur K, Masuda AK, Srinivasan R, Cramer SC.</span>
+            <span class="pub-venue">Stroke, 51(5):1442–1450, 2020.</span>
+            <span class="pub-summary">Establishes low-frequency EEG oscillations as a marker of both the injury caused by stroke and the recovery that follows.</span>
+          </li>
+          <li>
+            <span class="pub-title"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7722868/" target="_blank" rel="noopener">Rapid development of strong, persistent, spatiotemporally extensive cortical synchrony and underlying oscillations following acute MCA focal ischemia.</a></span>
+            <span class="pub-authors">Wann EG, <strong>Wodeyar A</strong>, Srinivasan R, Frostig RD.</span>
+            <span class="pub-venue">Scientific Reports, 10(1):21441, 2020.</span>
+            <span class="pub-summary">In an animal model, an acute ischemic stroke quickly produces strong, long-lasting synchrony and oscillations across wide areas of cortex.</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- ---------- Thesis and public writing ---------- -->
+      <div class="pub-group">
+        <h3>Thesis and public writing</h3>
+        <ol class="pub-list">
+          <li>
+            <span class="pub-badge">Opinion</span>
+            <span class="pub-title"><a href="https://www.thehindu.com/sci-tech/science/giant-artificial-intelligence-high-modernism-diversity/article66896382.ece" target="_blank" rel="noopener">What we lose when we work with a 'giant AI' like ChatGPT.</a></span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>.</span>
+            <span class="pub-venue">The Hindu, 28 May 2023.</span>
+            <span class="pub-summary">Argues that building large language models top-down flattens the local knowledge that knowledge work depends on, and that we need many differently incentivised models rather than one giant one.</span>
+          </li>
+          <li>
+            <span class="pub-badge">PhD thesis</span>
+            <span class="pub-title">Linking structure to function in resting state macroscale neural activity.</span>
+            <span class="pub-authors"><strong>Wodeyar A</strong>.</span>
+            <span class="pub-venue">University of California, Irvine, 2019.</span>
+            <span class="pub-summary">How the brain's anatomical wiring shapes the large-scale functional networks measured at rest.</span>
+          </li>
+        </ol>
+      </div>
     </section>
 
     <!-- ===================== CONTACT ===================== -->
