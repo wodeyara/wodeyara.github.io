@@ -205,6 +205,10 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .pub-title { display: block; font-weight: 600; }
 .pub-authors { display: block; color: var(--text); font-size: 0.95rem; }
 .pub-venue { display: block; color: var(--muted); font-size: 0.92rem; font-style: italic; }
+.pub-summary { display: block; margin-top: 4px; font-size: 0.93rem; color: var(--text); }
+.pub-group { margin-top: 32px; }
+.pub-group h3 { margin-bottom: 0; padding-bottom: 6px; border-bottom: 2px solid var(--accent); display: inline-block; }
+.pub-group .pub-list { margin-top: 16px; }
 
 .pub-badge {
   display: inline-block;
