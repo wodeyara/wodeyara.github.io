@@ -1,0 +1,1293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase-locked stimulation</title>
+<meta name="description" content="Two published seizure models run in the browser; deliver one stimulation pulse at a chosen phase of the seizure wave and see whether the seizure stops.">
+<style>
+:root {
+  --bg: #ffffff; --ink: #1f1f1e; --muted: #5d5c56; --faint: #9b9a92; --grid: #e9e8e2; --panel: #f7f7f4;
+  --border: #dddcd5; --truth: #7d7c75; --trk: #2a78d6; --stim: #eb6834; --ok: #008300; --bad: #e34948;
+  --trk-soft: rgba(42, 120, 214, 0.18); --stim-soft: rgba(235, 104, 52, 0.22);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413; --ink: #ebeae4; --muted: #b3b2aa; --faint: #7a7972; --grid: #2a2a27; --panel: #1c1c1a;
+    --border: #3a3a35; --truth: #a6a49c; --trk: #5d9eec; --stim: #f2804f; --ok: #3cb43c; --bad: #f36563;
+    --trk-soft: rgba(93, 158, 236, 0.25); --stim-soft: rgba(242, 128, 79, 0.28);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 20px; font-weight: 600; margin: 4px 0 6px; letter-spacing: -0.01em; }
+h2 { font-size: 13px; font-weight: 600; margin: 0 0 8px; text-transform: none; color: var(--ink); }
+p { margin: 0 0 8px; }
+.lede { color: var(--muted); max-width: 900px; }
+.small { font-size: 12.5px; color: var(--muted); }
+.def { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+.def b { color: var(--ink); font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 12px 0 14px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { padding: 5px 12px; cursor: pointer; user-select: none; color: var(--muted); }
+.seg label:last-of-type { border-left: 1px solid var(--border); }
+.seg input:checked + label { background: var(--ink); color: var(--bg); }
+.seg input:focus-visible + label { outline: 2px solid var(--trk); outline-offset: -2px; }
+button { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 11px; cursor: pointer; }
+button:hover { border-color: var(--faint); }
+button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--trk); outline-offset: 1px; }
+button.primary { background: var(--stim); border-color: var(--stim); color: #fff; font-weight: 600; }
+button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button:disabled { opacity: 0.45; cursor: default; }
+select, input[type=number] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; }
+input[type=number] { width: 5.5em; }
+input[type=range] { width: 100%; accent-color: var(--ink); margin: 2px 0; }
+.status { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.status b { color: var(--ink); font-weight: 600; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } .status { margin-left: 0; width: 100%; } }
+.fig { margin: 0 0 14px; }
+.fig .cap { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); margin: 0 0 4px; }
+.key { display: inline-flex; align-items: center; gap: 5px; }
+.sw { display: inline-block; width: 14px; height: 0; border-top: 2px solid; }
+.sw.dot { width: 8px; height: 8px; border: 0; border-radius: 50%; }
+#eeg { height: 300px; }
+@media (max-width: 600px) { #eeg { height: 250px; } }
+canvas { display: block; width: 100%; touch-action: none; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 330px) { .trio { grid-template-columns: minmax(0, 1fr); } }
+.trio canvas { aspect-ratio: 1 / 1; }
+.result { padding: 8px 10px; border-left: 3px solid var(--border); background: var(--panel); margin: 2px 0 14px; min-height: 2.6em; font-variant-numeric: tabular-nums; }
+.result.ok { border-left-color: var(--ok); } .result.bad { border-left-color: var(--bad); } .result.wait { border-left-color: var(--stim); }
+.panel { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 0 0 12px; background: var(--bg); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0; }
+.row label { color: var(--ink); }
+.lab { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-top: 6px; }
+.lab output { font-variant-numeric: tabular-nums; color: var(--ink); }
+.track { position: relative; height: 6px; margin: 0 8px 2px; border-radius: 3px; background: var(--grid); }
+.track .band { position: absolute; top: 0; bottom: 0; background: var(--truth); opacity: 0.55; border-radius: 3px; }
+.track .op { position: absolute; top: -3px; width: 2px; height: 12px; background: var(--ink); }
+.ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--faint); margin: 0 2px; font-variant-numeric: tabular-nums; }
+.regime { margin: 6px 0 2px; }
+.regime b { font-weight: 600; }
+.msg { min-height: 1.4em; font-size: 12.5px; color: var(--muted); }
+.radio { display: flex; gap: 6px; align-items: flex-start; margin: 4px 0; }
+.radio input { margin-top: 3px; }
+.presets button { display: block; width: 100%; text-align: left; margin: 0 0 6px; padding: 6px 10px; }
+.presets button span { display: block; font-size: 12px; color: var(--muted); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 5px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+th { font-weight: 600; color: var(--muted); background: var(--panel); position: sticky; top: 0; }
+td:nth-child(2), th:nth-child(2), td:nth-child(8), th:nth-child(8) { text-align: left; }
+.tOK { color: var(--ok); font-weight: 600; } .tNO { color: var(--bad); font-weight: 600; }
+kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
+footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--border); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Phase-locked stimulation of a simulated seizure</h1>
+  <p class="lede">Two published seizure models (the Epileptor, Jirsa et al. 2014, and the Wendling et al. 2002 neural mass) run live in this page, integrated exactly as in the project's Python code. Deliver one brief pulse at a chosen phase of the seizure wave and see whether the seizure stops. This is a simulation for research, not a clinical tool.</p>
+</header>
+
+<div class="bar" role="group" aria-label="Model and run controls">
+  <div class="seg" role="radiogroup" aria-label="Model">
+    <input type="radio" name="model" id="m-epi" value="epileptor" checked><label for="m-epi">Epileptor</label>
+    <input type="radio" name="model" id="m-nm" value="neural_mass"><label for="m-nm">Neural mass</label>
+  </div>
+  <div class="row" style="margin:0">
+    <button id="pause" aria-pressed="false">Pause</button>
+    <button id="reset" title="Restart the model on its seizure cycle (keeps the history)">Reset</button>
+    <label for="speed">Speed</label>
+    <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1× (real time)</option><option value="2">2×</option><option value="4">4×</option></select>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+</div>
+
+<div class="layout">
+<main>
+  <div class="fig">
+    <div class="cap">
+      <span class="key"><span class="sw" style="border-color:var(--ink)"></span>observed EEG (with noise)</span>
+      <span class="key"><span class="sw" style="border-color:var(--truth)"></span>noise-free EEG, with landmarks ticked</span>
+      <span class="key"><span class="sw" style="border-color:var(--trk)"></span>tracked phase</span>
+      <span class="key"><span class="sw" style="border-color:var(--stim)"></span>pulse; shaded: 15-ms blank</span>
+    </div>
+    <canvas id="eeg" aria-label="Scrolling EEG, last 5 seconds"></canvas>
+  </div>
+  <div class="result" id="result" aria-live="polite">No pulse delivered yet.</div>
+
+  <div class="trio">
+    <div class="fig">
+      <div class="cap"><span class="key"><span class="sw" style="border-color:var(--truth)"></span>true</span><span class="key"><span class="sw" style="border-color:var(--trk)"></span>tracked ± SD</span><span class="key"><span class="sw" style="border-color:var(--stim)"></span>target</span></div>
+      <canvas id="dial" tabindex="0" role="slider" aria-label="Target phase in degrees; drag or use arrow keys" aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></canvas>
+      <p class="def"><b>Phase</b>: position within the current seizure wave, 0° at its landmark (the upward crossing of a fixed level by the noise-free EEG) and 360° one period later. Click or drag the dial to set the target.</p>
+    </div>
+    <div class="fig">
+      <div class="cap"><span class="key"><span class="sw" style="border-color:var(--truth)"></span>seizure cycle</span><span class="key"><span class="sw dot" style="background:var(--ink)"></span>state</span><span class="key"><span class="sw" style="border-color:var(--stim)"></span>after a pulse</span></div>
+      <canvas id="plane" aria-label="Phase plane of the model"></canvas>
+      <p class="def" id="planeNote"></p>
+    </div>
+    <div class="fig">
+      <div class="cap"><span class="key"><span class="sw dot" style="background:var(--ok)"></span>terminated</span><span class="key"><span class="sw dot" style="background:var(--bad)"></span>not</span><span>filled: biphasic, ring: monophasic</span></div>
+      <canvas id="map" aria-label="Outcomes by phase and amplitude"></canvas>
+      <p class="def">Your pulses so far: angle = true phase at the pulse (0° at top, clockwise), distance from the centre = amplitude. <button id="clearHist" style="padding:1px 7px;font-size:12px">Clear</button></p>
+    </div>
+  </div>
+
+  <h2 style="margin-top:6px">Pulses</h2>
+  <p class="def" style="margin:0 0 6px"><b>Terminated</b>: the noise-free EEG's peak-to-peak over the last period of the 2 s after the pulse is below 15% of the seizure cycle's. R<sub>supp</sub>: RMS of the noise-free EEG over the two cycles before the pulse divided by that over the two cycles after the 15-ms blank (early) or over the last two cycles of the 2 s (late).</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>delivery</th><th>true phase</th><th>tracked phase</th><th>amplitude</th><th>charge / phase</th><th>pulse</th><th>outcome</th><th>R<sub>supp</sub> early</th><th>R<sub>supp</sub> late</th><th>time to term.</th></tr></thead>
+      <tbody id="hist"></tbody>
+    </table>
+  </div>
+</main>
+
+<aside aria-label="Controls">
+  <section class="panel" id="parPanel">
+    <h2>Model parameter</h2>
+    <div id="parSliders"></div>
+    <p class="regime" id="regime"></p>
+    <p class="small" id="freq"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Observation noise</h2>
+    <div class="row"><label for="snr">Signal-to-noise ratio</label>
+      <select id="snr"><option>0.5</option><option>1</option><option>3</option><option>10</option><option selected>30</option><option>100</option><option>300</option><option>1000</option><option value="Infinity">no noise</option></select></div>
+    <p class="small">SNR = variance of the noise-free seizure EEG over one cycle / variance of the added white noise. The noise is added to the displayed and tracked EEG only, never to the model.</p>
+    <p class="small" id="trkInfo"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Stimulus</h2>
+    <div class="radio"><input type="radio" name="kind" id="k-bi" value="biphasic" checked><label for="k-bi"><b>Charge-balanced biphasic</b>: a leading phase, then an equal and opposite phase of the same width, so the net charge is zero.</label></div>
+    <div class="radio"><input type="radio" name="kind" id="k-mono" value="monophasic"><label for="k-mono"><b>Monophasic</b>: the leading phase only.</label></div>
+    <div class="lab"><label for="amp">Amplitude</label><output id="ampOut" for="amp"></output></div>
+    <input type="range" id="amp">
+    <p class="small" id="pulseInfo"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Deliver</h2>
+    <div class="row"><button class="primary" id="fireNow">Stimulate now</button><span class="small">or press <kbd>Space</kbd></span></div>
+    <div class="row"><label for="target">Target phase</label><input type="number" id="target" min="0" max="359" step="1" value="90"><span>°</span></div>
+    <div class="radio"><input type="radio" name="src" id="s-true" value="true" checked><label for="s-true">True phase (from the noise-free EEG: what the experimenter knows)</label></div>
+    <div class="radio"><input type="radio" name="src" id="s-trk" value="tracked"><label for="s-trk">Tracked phase (from the noisy EEG: what a device would know). Fires only if its uncertainty is below 40°; otherwise that wave is skipped.</label></div>
+    <div class="row"><button id="arm" aria-pressed="false">Arm: fire at the next crossing</button></div>
+    <div class="radio"><input type="checkbox" id="repeat"><label for="repeat">Repeat: re-arm on every wave until the seizure terminates (at most one pulse per wave, at least two free periods between pulses)</label></div>
+    <div class="row"><button id="agnostic">Phase-agnostic pulse</button><span class="small">at a uniformly random time within the next wave</span></div>
+    <div class="row"><button id="startSz">Start seizure</button><span class="small">after a termination</span></div>
+    <p class="msg" id="armMsg" aria-live="polite"></p>
+  </section>
+
+  <section class="panel presets">
+    <h2>Presets</h2>
+    <div id="presets"></div>
+    <p class="small">Each preset restarts the seizure on the stored cycle, sets the stimulus, uses the true phase at SNR 30 and arms one pulse. Values from the project's characterisation (48 phases × 50 amplitudes).</p>
+  </section>
+</aside>
+</div>
+
+<footer class="small">
+  Models: <code>code/models_2026-11-10/epileptor.py</code>, <code>neural_mass.py</code>, <code>model_api.py</code>; tracker after <code>code/sos_2026-11-10/sos_lib.py</code>. Fixed-step RK4 (Epileptor 0.25 ms, neural mass 0.5 ms), one EEG sample per millisecond. The README beside the page in the project repository (<code>seizure_control/interactive</code>) says what is exact and what is approximate.
+</footer>
+</div>
+
+<!-- MODEL-CORE-BEGIN: pure model and tracker code, no DOM; check_port.mjs loads exactly this block -->
+<script id="sc-core">
+"use strict";
+var SCcore = (function () {
+  var FS = 1000;                      // EEG samples per second (model_api.FS)
+  var BLANK = 15;                     // artifact blank after pulse onset, samples (sc.BLANK_S * FS)
+  var GATE_DEG = 40;                  // gate on the tracker's circular phase SD (sc.GATE_DEG)
+  var TERM_FRAC = 0.15;               // termination threshold, fraction of the cycle's peak-to-peak
+  var T_POST = 2000;                  // observation window after a pulse, samples (response_map t_post = 2 s)
+
+  // ---------------------------------------------------------------- pulse (model_api.Pulse.waveform)
+  function pulseWave(width, kind, lead, dt) {
+    var n1 = Math.max(Math.round(width / dt), 1), w = [], i;
+    for (i = 0; i < n1; i++) w.push(lead);
+    if (kind === "biphasic") {
+      var n2 = Math.max(Math.round(width / dt), 1);
+      for (i = 0; i < n2; i++) w.push(-lead * n1 / n2);
+    }
+    return new Float64Array(w);
+  }
+
+  // ---------------------------------------------------------------- real cubic roots (for the Epileptor's rest state)
+  function cubicRealRoots(a, b, c, d) {
+    // a x^3 + b x^2 + c x + d = 0; real roots, polished by Newton steps
+    b /= a; c /= a; d /= a;
+    var q = (3 * c - b * b) / 9, r = (9 * b * c - 27 * d - 2 * b * b * b) / 54, disc = q * q * q + r * r, out = [];
+    if (disc > 0) {
+      var s = Math.cbrt(r + Math.sqrt(disc)), t = Math.cbrt(r - Math.sqrt(disc));
+      out.push(-b / 3 + s + t);
+    } else {
+      var th = Math.acos(Math.max(-1, Math.min(1, r / Math.sqrt(-q * q * q)))), m = 2 * Math.sqrt(-q);
+      out.push(m * Math.cos(th / 3) - b / 3, m * Math.cos((th + 2 * Math.PI) / 3) - b / 3, m * Math.cos((th + 4 * Math.PI) / 3) - b / 3);
+    }
+    return out.map(function (x) {
+      for (var k = 0; k < 6; k++) {
+        var f = ((x + b) * x + c) * x + d, g = (3 * x + 2 * b) * x + c;
+        if (g === 0) break;
+        x -= f / g;
+      }
+      return x;
+    }).sort(function (u, v) { return u - v; });
+  }
+
+  // ---------------------------------------------------------------- the Epileptor (epileptor.py, class Epileptor, z frozen)
+  var EPI = { a: 1.0, b: 3.0, c: 1.0, d: 5.0, r: 0.00035, x0: -1.6, Iext: 3.1, slope: 0.0, Iext2: 0.45, tau: 10.0, aa: 6.0, bb: 2.0 };
+  function Epileptor(opt) {
+    opt = opt || {};
+    this.name = "epileptor"; this.n = 6; this.dt = 2.5e-4; this.nsub = 4; this.ts = 150.0;
+    this.p = Object.assign({}, EPI);
+    this.z = opt.z !== undefined ? opt.z : 3.5;
+    this.setKind(opt.kind || "biphasic");
+  }
+  Epileptor.prototype.setKind = function (kind) {
+    this.kind = kind; this.width = 1e-3; this.lead = -1;
+    this.ampMax = kind === "biphasic" ? 36.0 : 30.0;
+    this.wave = pulseWave(this.width, kind, this.lead, this.dt);
+  };
+  Epileptor.prototype.rhs = function (X, u, out) {
+    var p = this.p, x1 = X[0], y1 = X[1], z = X[2], x2 = X[3], y2 = X[4], g = X[5], ts = this.ts;
+    var f1 = x1 < 0.0 ? (p.b - p.a * x1) * x1 : p.slope - x2 + 0.6 * ((z - 4.0) * (z - 4.0));
+    out[0] = (y1 - z + p.Iext + f1 * x1 + u) * ts;
+    out[1] = (p.c - p.d * x1 * x1 - y1) * ts;
+    out[2] = 0.0;
+    out[3] = (-y2 + x2 - x2 * x2 * x2 + p.Iext2 + p.bb * g - 0.3 * (z - 3.5)) * ts;
+    out[4] = ((-y2 + p.aa * Math.max(x2 + 0.25, 0.0)) / p.tau) * ts;
+    out[5] = (-0.01 * (g - 0.1 * x1)) * ts;
+  };
+  Epileptor.prototype.eeg = function (X) { return X[3] - X[0]; };
+  Epileptor.prototype.setParam = function (name, v, X) {
+    if (name === "z") { this.z = v; if (X) X[2] = v; }
+  };
+  Epileptor.prototype.seizureIC = function () { return new Float64Array([0.164, 0.209, this.z, -0.541, 0.085, 0.025]); };
+  Epileptor.prototype.restIC = function () {
+    var p = this.p, z = this.z;
+    var rt = cubicRealRoots(p.a, p.d - p.b, 0.0, z - p.Iext - p.c).filter(function (x) { return x < 0; });
+    if (rt.length < 2) return null;                       // no resting point (below the saddle-node, z < 2.915)
+    var x1 = rt[0], y1 = p.c - p.d * x1 * x1, g = 0.1 * x1;
+    var r2 = cubicRealRoots(-1.0, 0.0, 1.0, p.Iext2 + p.bb * g - 0.3 * (z - 3.5));
+    return new Float64Array([x1, y1, z, r2[0], 0.0, g]);
+  };
+  Epileptor.prototype.plane = function (X) { return [X[0], X[1]]; };   // fast subsystem (x1, y1)
+
+  // ---------------------------------------------------------------- the neural mass (neural_mass.py, Wendling 2002)
+  var NM_STD = { A: 3.25, B: 22.0, G: 10.0, a: 100.0, b: 50.0, g: 500.0, C: 135.0, c1: 1.0, c2: 0.8, c3: 0.25, c4: 0.25,
+                 c5: 0.3, c6: 0.1, c7: 0.8, e0: 2.5, r: 0.56, v0: 6.0, p: 90.0 };
+  var NM_OP = { A: 3.25, B: 60.0, G: 10.0, p: 320.0 };
+  function NeuralMass(opt) {
+    opt = opt || {};
+    this.name = "neural_mass"; this.n = 10; this.dt = 5e-4; this.nsub = 2;
+    this.P = Object.assign({}, NM_STD, NM_OP);
+    if (opt.p !== undefined) this.P.p = opt.p;
+    if (opt.B !== undefined) this.P.B = opt.B;
+    this.w = [1.0, 1.0, 1.0, 1.0];
+    this.setKind(opt.kind || "biphasic");
+  }
+  NeuralMass.prototype.setKind = function (kind) {
+    this.kind = kind; this.width = 2e-3; this.lead = +1; this.ampMax = 8.0;
+    this.wave = pulseWave(this.width, kind, this.lead, this.dt);
+  };
+  function sigm(v, e0, r, v0) { return 2.0 * e0 / (1.0 + Math.exp(r * (v0 - v))); }
+  function wendlingRhs(X, P, u, w, out) {
+    var y0 = X[0], y1 = X[1], y2 = X[2], y3 = X[3], y4 = X[4], y5 = X[5], y6 = X[6], y7 = X[7], y8 = X[8], y9 = X[9];
+    var A = P.A, B = P.B, G = P.G, a = P.a, b = P.b, g = P.g, C = P.C, e0 = P.e0, r = P.r, v0 = P.v0;
+    var sP = sigm(y1 - y2 - y3 + w[0] * u, e0, r, v0);
+    var sE = sigm(P.c1 * C * y0 + w[1] * u, e0, r, v0);
+    var sS = sigm(P.c3 * C * y0 + w[2] * u, e0, r, v0);
+    var sF = sigm(P.c5 * C * y0 - P.c6 * C * y4 + w[3] * u, e0, r, v0);
+    out[0] = y5; out[1] = y6; out[2] = y7; out[3] = y8; out[4] = y9;
+    out[5] = A * a * sP - 2 * a * y5 - a * a * y0;
+    out[6] = A * a * (P.p + P.c2 * C * sE) - 2 * a * y6 - a * a * y1;
+    out[7] = B * b * P.c4 * C * sS - 2 * b * y7 - b * b * y2;
+    out[8] = G * g * P.c7 * C * sF - 2 * g * y8 - g * g * y3;
+    out[9] = B * b * sS - 2 * b * y9 - b * b * y4;
+  }
+  NeuralMass.prototype.rhs = function (X, u, out) { wendlingRhs(X, this.P, u, this.w, out); };
+  NeuralMass.prototype.eeg = function (X) { return X[1] - X[2] - X[3]; };
+  NeuralMass.prototype.setParam = function (name, v) { this.P[name] = v; };
+  NeuralMass.prototype.seizureIC = function () {
+    // neural_mass.NeuralMass.seizure_ic: excited start, 3 s with the input raised by 40 /s, handed to the operating point
+    var X = new Float64Array(10); X[0] = 0.15; X[1] = 30.0;
+    var P = Object.assign({}, this.P); P.p = this.P.p + 40.0;
+    var sh = { n: 10, dt: this.dt, rhs: function (Y, u, out) { wendlingRhs(Y, P, u, [1, 1, 1, 1], out); } };
+    var nsub = Math.round(1e-3 / this.dt), ws = rk4Work(10);
+    for (var t = 0; t < 3000; t++) for (var k = 0; k < nsub; k++) rk4(sh, X, 0.0, ws);
+    return X;
+  };
+  NeuralMass.prototype.fixedPoints = function () {
+    // neural_mass.NeuralMass.fixed_points: solve for y0 on a grid, then bisection; stability by simulation (see NOTES)
+    var P = this.P, C = P.C, self = this;
+    function s(v) { return sigm(v, P.e0, P.r, P.v0); }
+    function parts(y0) {
+      var y1 = P.A / P.a * (P.p + P.c2 * C * s(P.c1 * C * y0));
+      var y2 = P.B / P.b * P.c4 * C * s(P.c3 * C * y0);
+      var y4 = P.B / P.b * s(P.c3 * C * y0);
+      var y3 = P.G / P.g * P.c7 * C * s(P.c5 * C * y0 - P.c6 * C * y4);
+      return [y1, y2, y3, y4];
+    }
+    function f(y0) { var q = parts(y0); return P.A / P.a * s(q[0] - q[1] - q[2]) - y0; }
+    var lo0 = -0.05, hi0 = 2 * P.e0 * P.A / P.a + 0.05, N = 200001, out = [], fprev = f(lo0), xprev = lo0;
+    for (var i = 1; i < N; i++) {
+      var x = lo0 + (hi0 - lo0) * i / (N - 1), fx = f(x);
+      if (Math.sign(fx) !== Math.sign(fprev)) {
+        var lo = xprev, hi = x, sg = Math.sign(fprev);
+        for (var it = 0; it < 60; it++) { var mid = 0.5 * (lo + hi); if (Math.sign(f(mid)) === sg) lo = mid; else hi = mid; }
+        var st = new Float64Array(10); st[0] = 0.5 * (lo + hi); var q = parts(st[0]);
+        st[1] = q[0]; st[2] = q[1]; st[3] = q[2]; st[4] = q[3];
+        out.push(st);
+      }
+      fprev = fx; xprev = x;
+    }
+    return out.map(function (st) { return { X: st, stable: self.isStable(st) }; });
+  };
+  NeuralMass.prototype.isStable = function (st) {
+    // perturb and follow 4 s: stable if the deviation has shrunk (the rest focus decays at 0.6-2.4 /s in the window)
+    var X = Float64Array.from(st), ws = rk4Work(10), d0 = 1e-4, k;
+    for (k = 0; k < 5; k++) X[k] += d0;
+    for (var t = 0; t < 4000 * this.nsub; t++) rk4(this, X, 0.0, ws);
+    var dev = 0; for (k = 0; k < 10; k++) dev = Math.max(dev, Math.abs(X[k] - st[k]));
+    return dev < d0;
+  };
+  NeuralMass.prototype.restIC = function () {
+    var fps = this.fixedPoints().filter(function (o) { return o.stable; });
+    if (!fps.length) return null;
+    fps.sort(function (u, v) { return u.X[0] - v.X[0]; });
+    return fps[0].X;
+  };
+  NeuralMass.prototype.plane = function (X) { return [X[1] - X[2] - X[3], X[0]]; };   // EEG against y0 (fig_neural_mass C)
+
+  // ---------------------------------------------------------------- integration (model_api.SeizureModel._rk4 / step)
+  function rk4Work(n) { return { k1: new Float64Array(n), k2: new Float64Array(n), k3: new Float64Array(n), k4: new Float64Array(n), t: new Float64Array(n) }; }
+  function rk4(m, X, u, w) {
+    var h = m.dt, n = m.n, i, k1 = w.k1, k2 = w.k2, k3 = w.k3, k4 = w.k4, T = w.t, hh = 0.5 * h, h6 = h / 6.0;
+    m.rhs(X, u, k1);
+    for (i = 0; i < n; i++) T[i] = X[i] + hh * k1[i];
+    m.rhs(T, u, k2);
+    for (i = 0; i < n; i++) T[i] = X[i] + hh * k2[i];
+    m.rhs(T, u, k3);
+    for (i = 0; i < n; i++) T[i] = X[i] + h * k3[i];
+    m.rhs(T, u, k4);
+    for (i = 0; i < n; i++) X[i] = X[i] + h6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+  }
+  // One EEG sample (1 ms). amp: pulse amplitude (0 = none); nSince: samples since pulse onset at the start of this step.
+  function step(m, X, amp, nSince, w) {
+    var nsub = m.nsub, L = m.wave.length, k0 = (nSince === undefined || nSince === null) ? 1e9 : nSince * nsub;
+    var live = amp !== 0 && amp !== undefined && k0 < L && k0 > -nsub;
+    for (var k = 0; k < nsub; k++) {
+      var u = 0.0;
+      if (live) { var kk = k0 + k; if (kk >= 0 && kk < L) u = amp * m.wave[kk]; }
+      rk4(m, X, u, w);
+    }
+    return m.eeg(X);
+  }
+  function pulseSamples(m) { return Math.ceil(m.wave.length / m.nsub); }
+
+  // ---------------------------------------------------------------- landmarks, amplitude, outcome (model_api)
+  function findLandmarks(e, level, refractory) {
+    refractory = refractory || 0; var out = [], last = -Infinity;
+    for (var i = 0; i + 1 < e.length; i++) {
+      if (e[i] < level && e[i + 1] >= level) {
+        var t = i + (level - e[i]) / (e[i + 1] - e[i]);
+        if (t - last >= refractory) { out.push(t); last = t; }
+      }
+    }
+    return out;
+  }
+  function mean(a, i0, i1) { var s = 0; for (var i = i0; i < i1; i++) s += a[i]; return s / (i1 - i0); }
+  function windowAmp(a, i0, i1) {
+    if (i0 === undefined) { i0 = 0; i1 = a.length; }
+    var m = mean(a, i0, i1), s = 0; for (var i = i0; i < i1; i++) s += (a[i] - m) * (a[i] - m);
+    return Math.sqrt(s / (i1 - i0));
+  }
+  function ptp(a, i0, i1) { var lo = Infinity, hi = -Infinity; for (var i = i0; i < i1; i++) { if (a[i] < lo) lo = a[i]; if (a[i] > hi) hi = a[i]; } return hi - lo; }
+  function timeToTermination(e, nPer, thresh) {
+    var nW = e.length - nPer + 1, lastAbove = -1, above = false;
+    for (var j = 0; j < nW; j++) { above = ptp(e, j, j + nPer) >= thresh; if (above) lastAbove = j; }
+    if (above) return NaN;
+    return ((lastAbove >= 0 ? lastAbove + 1 : 0) + nPer - 1) / FS;
+  }
+  // Outcome of one pulse (model_api.response_map): pre = the nw noise-free samples before onset, post = the T_POST
+  // noise-free samples from onset (post[0] is the sample after the first 1-ms step of the pulse).
+  function rsuppWindows(c) { return { nb: BLANK, nw: Math.round(2 * c.T) }; }
+  function outcome(pre, post, c) {
+    var w = rsuppWindows(c), nT = Math.ceil(c.T), ns = post.length;
+    var preA = windowAmp(pre, 0, pre.length);
+    var p2pLast = ptp(post, ns - nT, ns), thr = TERM_FRAC * c.lcP2p, term = p2pLast < thr;
+    return {
+      terminated: term,
+      rsupp: preA / (windowAmp(post, w.nb, w.nb + w.nw) + 1e-12),
+      rsuppLate: preA / (windowAmp(post, ns - w.nw, ns) + 1e-12),
+      tTerm: term ? timeToTermination(post, nT, thr) : NaN,
+      p2pLastFrac: p2pLast / c.lcP2p
+    };
+  }
+
+  // ---------------------------------------------------------------- characterisation (model_api.SeizureModel.characterise)
+  // Burn 10 s from seizureIC, keep 6 s; landmark level crossed once per cycle; period; stored cycle; resting state.
+  function characterise(m, opt) {
+    opt = opt || {};
+    var nb = opt.nb || 10000, nk = opt.nk || 6000, n = m.n, ws = rk4Work(n), t, i;
+    var X = m.seizureIC(), sic = Float64Array.from(X);
+    for (t = 0; t < nb; t++) step(m, X, 0, null, ws);
+    var states = new Array(nk), eeg = new Float64Array(nk);
+    for (t = 0; t < nk; t++) { eeg[t] = step(m, X, 0, null, ws); states[t] = Float64Array.from(X); }
+    var lo = Infinity, hi = -Infinity;
+    for (t = 0; t < nk; t++) { if (eeg[t] < lo) lo = eeg[t]; if (eeg[t] > hi) hi = eeg[t]; }
+    var level = null, lm = null, fr = [0.5, 0.7, 0.3, 0.85, 0.15];
+    var minP2p = m.name === "epileptor" ? 0.5 : 1.0;      // page-only guard: a decaying focus is not a seizure cycle
+    if (hi - lo > minP2p) {
+      for (i = 0; i < fr.length; i++) {
+        var cand = lo + fr[i] * (hi - lo), tc = findLandmarks(eeg, cand);
+        if (tc.length >= 4) {
+          var d = []; for (var j = 1; j < tc.length; j++) d.push(tc[j] - tc[j - 1]);
+          var md = mean(d, 0, d.length), sd = windowAmp(d, 0, d.length);
+          if (sd < 0.02 * md) { level = cand; lm = tc; break; }
+        }
+      }
+    }
+    var c = { ok: level !== null, seizureIC: sic, p2pKeep: hi - lo };
+    var Xr0 = m.restIC();
+    if (Xr0) {
+      var Xr = Float64Array.from(Xr0);
+      for (t = 0; t < nb; t++) step(m, Xr, 0, null, ws);
+      c.restRaw = Float64Array.from(Xr);
+    }
+    if (!c.ok) {
+      if (Xr0) { c.fpX = c.restRaw; c.fpEeg = m.eeg(c.restRaw); }
+      return c;
+    }
+    var dd = []; for (i = 1; i < lm.length; i++) dd.push(lm[i] - lm[i - 1]);
+    var T = mean(dd, 0, dd.length), nT = Math.ceil(T), i0 = Math.ceil(lm[0]);
+    var i1 = Math.min(i0 + nT, nk);
+    c.T = T; c.periodS = T / FS; c.f0 = FS / T; c.level = level; c.lcP2p = hi - lo;
+    c.lcX = states.slice(i0, i1); c.lcEeg = eeg.slice(i0, i1);
+    c.lcMean = mean(c.lcEeg, 0, c.lcEeg.length); c.lcSd = windowAmp(c.lcEeg, 0, c.lcEeg.length);
+    c.keepEeg = eeg; c.keepLm = lm;
+    if (Xr0) {
+      var Xr2 = Float64Array.from(c.restRaw), nr = Math.floor(2 * T) + 1, er = new Float64Array(nr);
+      for (t = 0; t < nr; t++) er[t] = step(m, Xr2, 0, null, ws);
+      c.fpX = Xr2; c.fpEeg = er[nr - 1]; c.fpResidP2p = ptp(er, 0, nr);
+      c.bistable = c.lcP2p > 0 && c.fpResidP2p < 0.01 * c.lcP2p;
+    } else { c.fpX = null; c.bistable = false; }
+    return c;
+  }
+
+  // ---------------------------------------------------------------- phase uncertainty (sos_lib.rbar_gauss, circ_sd_deg)
+  function bessI0e(x) {   // exp(-x) I0(x), x >= 0 (Abramowitz & Stegun 9.8.1-9.8.2)
+    if (x < 3.75) { var y = (x / 3.75) * (x / 3.75);
+      return Math.exp(-x) * (1 + y * (3.5156229 + y * (3.0899424 + y * (1.2067492 + y * (0.2659732 + y * (0.0360768 + y * 0.0045813)))))); }
+    var t = 3.75 / x;
+    return (0.39894228 + t * (0.01328592 + t * (0.00225319 + t * (-0.00157565 + t * (0.00916281 + t * (-0.02057706 + t * (0.02635537 + t * (-0.01647633 + t * 0.00392377)))))))) / Math.sqrt(x);
+  }
+  function bessI1e(x) {   // exp(-x) I1(x), x >= 0 (A&S 9.8.3-9.8.4)
+    if (x < 3.75) { var y = (x / 3.75) * (x / 3.75);
+      return Math.exp(-x) * x * (0.5 + y * (0.87890594 + y * (0.51498869 + y * (0.15084934 + y * (0.02658733 + y * (0.00301532 + y * 0.00032411)))))); }
+    var t = 3.75 / x;
+    return (0.39894228 + t * (-0.03988024 + t * (-0.00362018 + t * (0.00163801 + t * (-0.01031555 + t * (0.02282967 + t * (-0.02895312 + t * (0.01787654 - t * 0.00420059)))))))) / Math.sqrt(x);
+  }
+  function rbarGauss(nu) { var x = 0.25 * nu * nu; return Math.sqrt(Math.PI / 8) * nu * (bessI0e(x) + bessI1e(x)); }
+  function circSdDeg(nu) {
+    if (!(nu > 0)) return 360;
+    var sd = nu > 1e3 ? 1 / nu : Math.sqrt(-2 * Math.log(Math.min(1, Math.max(1e-300, rbarGauss(nu)))));
+    return Math.min(sd * 180 / Math.PI, 360);
+  }
+
+  // ---------------------------------------------------------------- the tracker (compact SoS: steady-state Kalman filter)
+  // Oscillators at f0, 2 f0, ... K f0 (<= fmax): damped rotations rho_k R(2 pi f_k / FS), rho_k = exp(-pi (f_k / Q) / FS);
+  // observation y = sum of in-phase states + white noise R. sigma0[k]: stationary per-axis variance of oscillator k.
+  // Gains by iterating the Riccati recursion to convergence. Phase = angle of the fundamental's state + offset.
+  function Tracker(o) {
+    var f0 = o.f0, K = o.K || 8, Q = o.Q || 12, fmax = o.fmax || 40, i, j;
+    var fr = []; for (i = 1; i <= K; i++) if (i * f0 <= fmax || i === 1) fr.push(i * f0);
+    var no = fr.length, d = 2 * no;
+    this.freqs = fr; this.no = no; this.d = d; this.mu = o.mu || 0; this.scale = o.scale || 1;
+    this.R = o.R; this.sigma0 = o.sigma0.slice(0, no);
+    this.rc = new Float64Array(no); this.rs = new Float64Array(no); var qd = new Float64Array(d);
+    for (i = 0; i < no; i++) {
+      var rho = Math.exp(-Math.PI * (fr[i] / Q) / FS), th = 2 * Math.PI * fr[i] / FS;
+      this.rc[i] = rho * Math.cos(th); this.rs[i] = rho * Math.sin(th);
+      qd[2 * i] = qd[2 * i + 1] = (1 - rho * rho) * this.sigma0[i];
+    }
+    this.qd = qd;
+    // Riccati recursion from the prior (P = diag sigma0) to convergence
+    var P = zeros(d), Pp = zeros(d), Kg = new Float64Array(d), Kold = new Float64Array(d), it, conv = false, tmp = zeros(d);
+    for (i = 0; i < no; i++) P[2 * i][2 * i] = P[2 * i + 1][2 * i + 1] = this.sigma0[i];
+    this.Pinf = copyM(P);
+    var maxIt = o.maxIt || 60000, stable = 0;
+    for (it = 0; it < maxIt; it++) {
+      this.APAt(P, Pp, tmp);
+      for (i = 0; i < d; i++) Pp[i][i] += qd[i];
+      var cP = new Float64Array(d), S = this.R;
+      for (j = 0; j < d; j++) { var sum = 0; for (i = 0; i < d; i += 2) sum += Pp[i][j]; cP[j] = sum; }
+      for (i = 0; i < d; i += 2) S += cP[i];
+      for (i = 0; i < d; i++) Kg[i] = cP[i] / S;
+      for (i = 0; i < d; i++) for (j = 0; j < d; j++) P[i][j] = Pp[i][j] - Kg[i] * cP[j];
+      var dk = 0, km = 0;
+      for (i = 0; i < d; i++) { dk = Math.max(dk, Math.abs(Kg[i] - Kold[i])); km = Math.max(km, Math.abs(Kg[i])); Kold[i] = Kg[i]; }
+      if (dk <= 1e-13 * km) { if (++stable >= 50) { conv = true; break; } } else stable = 0;
+    }
+    this.riccatiIters = it + 1; this.riccatiConverged = conv;
+    this.K = Kg; this.P = P; this.Pp = Pp;
+    this.E = zeros(d); for (i = 0; i < d; i++) for (j = 0; j < d; j++) this.E[i][j] = Pp[i][j] - P[i][j];
+    this.vss = 0.5 * (P[0][0] + P[1][1]);
+    var pm = 0; for (i = 0; i < d; i++) for (j = 0; j < d; j++) pm = Math.max(pm, Math.abs(P[i][j]));
+    this.dTol = 1e-12 * pm;
+    this.offset = 0; this.sdScale = 1;
+    this.x = new Float64Array(d); this.xa = new Float64Array(d); this.D = zeros(d); this.M = zeros(d); this.tmp = zeros(d);
+    this.reset();
+  }
+  function zeros(d) { var a = new Array(d); for (var i = 0; i < d; i++) a[i] = new Float64Array(d); return a; }
+  function copyM(A) { return A.map(function (r) { return Float64Array.from(r); }); }
+  Tracker.prototype.APAt = function (P, out, tmp) {    // out = A P A' for the block-diagonal rotation A
+    var no = this.no, d = this.d, i, j, c, s;
+    for (i = 0; i < no; i++) { c = this.rc[i]; s = this.rs[i];
+      var r0 = P[2 * i], r1 = P[2 * i + 1], t0 = tmp[2 * i], t1 = tmp[2 * i + 1];
+      for (j = 0; j < d; j++) { t0[j] = c * r0[j] - s * r1[j]; t1[j] = s * r0[j] + c * r1[j]; } }
+    for (j = 0; j < no; j++) { c = this.rc[j]; s = this.rs[j];
+      for (i = 0; i < d; i++) { var a0 = tmp[i][2 * j], a1 = tmp[i][2 * j + 1];
+        out[i][2 * j] = c * a0 - s * a1; out[i][2 * j + 1] = s * a0 + c * a1; } }
+  };
+  Tracker.prototype.reset = function () {
+    this.x.fill(0);
+    for (var i = 0; i < this.d; i++) for (var j = 0; j < this.d; j++) this.D[i][j] = this.Pinf[i][j] - this.P[i][j];
+    this.Dlive = true; this.var = this.vss + 0.5 * (this.D[0][0] + this.D[1][1]);
+  };
+  // y: raw EEG sample; update false = blanked sample (predict only). Returns nothing; read phaseRaw(), phase(), sdDeg().
+  Tracker.prototype.step = function (y, update) {
+    var x = this.x, no = this.no, d = this.d, i, j;
+    for (i = 0; i < no; i++) { var a = x[2 * i], b = x[2 * i + 1];
+      x[2 * i] = this.rc[i] * a - this.rs[i] * b; x[2 * i + 1] = this.rs[i] * a + this.rc[i] * b; }
+    if (update) {
+      var yn = (y - this.mu) / this.scale, e = yn; for (i = 0; i < d; i += 2) e -= x[i];
+      for (i = 0; i < d; i++) x[i] += this.K[i] * e;
+    }
+    if (this.Dlive) {
+      var D = this.D, M = this.M; this.APAt(D, M, this.tmp);
+      if (update) {      // D <- (I - K c) M (I - K c)'
+        var cM = new Float64Array(d), Mc = new Float64Array(d), cMc = 0, K = this.K;
+        for (j = 0; j < d; j++) { var s1 = 0; for (i = 0; i < d; i += 2) s1 += M[i][j]; cM[j] = s1; }
+        for (i = 0; i < d; i++) { var s2 = 0; for (j = 0; j < d; j += 2) s2 += M[i][j]; Mc[i] = s2; }
+        for (i = 0; i < d; i += 2) cMc += cM[i];
+        var mx = 0;
+        for (i = 0; i < d; i++) for (j = 0; j < d; j++) {
+          var v = M[i][j] - K[i] * cM[j] - Mc[i] * K[j] + K[i] * K[j] * cMc; D[i][j] = v; if (Math.abs(v) > mx) mx = Math.abs(v); }
+        if (mx < this.dTol) { this.Dlive = false; for (i = 0; i < d; i++) D[i].fill(0); }
+      } else {           // D <- A D A' + E
+        for (i = 0; i < d; i++) for (j = 0; j < d; j++) D[i][j] = M[i][j] + this.E[i][j];
+      }
+    } else if (!update) {
+      for (i = 0; i < d; i++) for (j = 0; j < d; j++) this.D[i][j] = this.E[i][j];
+      this.Dlive = true;
+    }
+    this.var = this.vss + (this.Dlive ? 0.5 * (this.D[0][0] + this.D[1][1]) : 0);
+  };
+  Tracker.prototype.phaseRaw = function () { return Math.atan2(this.x[1], this.x[0]); };
+  Tracker.prototype.phase = function () { return wrap2pi(this.phaseRaw() + this.offset); };
+  Tracker.prototype.nu = function () { return Math.hypot(this.x[0], this.x[1]) / Math.sqrt(this.var); };
+  Tracker.prototype.sdDeg = function () { return circSdDeg(this.nu() / this.sdScale); };
+  Tracker.prototype.amp = function () { var s = 0; for (var i = 0; i < this.d; i++) s += this.x[i] * this.x[i]; return Math.sqrt(s / 2) * this.scale; };
+  // sos_lib.SoS.calibrate_offset: offset = circular mean of (true - raw); sd_scale by moment matching (bisection)
+  Tracker.prototype.calibrate = function (truePh, rawPh, nus) {
+    var n = truePh.length, sc = 0, ss = 0, i;
+    for (i = 0; i < n; i++) { sc += Math.cos(truePh[i] - rawPh[i]); ss += Math.sin(truePh[i] - rawPh[i]); }
+    this.offset = Math.atan2(ss, sc);
+    var ec = 0, es = 0; for (i = 0; i < n; i++) { var e = truePh[i] - rawPh[i] - this.offset; ec += Math.cos(e); es += Math.sin(e); }
+    var Robs = Math.hypot(ec, es) / n;
+    var f = function (ls) { var s = 0, k = Math.exp(ls); for (var q = 0; q < n; q++) s += rbarGauss(nus[q] / k); return s / n - Robs; };
+    var lo = Math.log(0.02), hi = Math.log(50), ls;
+    if (f(lo) < 0) ls = lo; else if (f(hi) > 0) ls = hi;
+    else { for (var it = 0; it < 50; it++) { var mid = 0.5 * (lo + hi); if (f(mid) > 0) lo = mid; else hi = mid; } ls = 0.5 * (lo + hi); }
+    this.sdScale = Math.exp(ls);
+    return { offset: this.offset, sdScale: this.sdScale, errSdDeg: Math.sqrt(-2 * Math.log(Math.max(Robs, 1e-300))) * 180 / Math.PI };
+  };
+  // Prior variances of the oscillators from the characterisation's noise-free record (whole cycles, Fourier
+  // coefficients at k f0) and the observation-noise variance R = noise variance + the non-harmonic remainder.
+  function trackerFor(c, snr, opt) {
+    opt = opt || {};
+    var e = c.keepEeg, lm = c.keepLm, i0 = Math.ceil(lm[0]), nc = lm.length - 1, i1 = Math.ceil(lm[nc]);
+    var N = i1 - i0, mu = mean(e, i0, i1), v = windowAmp(e, i0, i1); v = v * v;
+    var noiseVar = snr > 0 && isFinite(snr) ? c.lcSd * c.lcSd / snr : 0;
+    var scale = Math.sqrt(v + noiseVar), K = opt.K || 8, sig = [], tot = 0;
+    var Tlm = (lm[nc] - lm[0]) / nc;
+    for (var k = 1; k <= K; k++) {
+      var re = 0, im = 0, w = 2 * Math.PI * k / Tlm;
+      for (var n = i0; n < i1; n++) { re += (e[n] - mu) * Math.cos(w * n); im -= (e[n] - mu) * Math.sin(w * n); }
+      var amp2 = (re * re + im * im) * 4 / (N * N);
+      var s0 = Math.max(amp2 / 2, 1e-3 * v); sig.push(s0 / (scale * scale)); tot += amp2 / 2;
+    }
+    var R = (noiseVar + Math.max(v - tot, 1e-3 * v)) / (scale * scale);
+    var tr = new Tracker({ f0: c.f0, K: K, Q: opt.Q || 12, sigma0: sig, R: R, mu: mu, scale: scale });
+    tr.noiseVar = noiseVar;
+    return tr;
+  }
+
+  function wrap2pi(a) { a = a % (2 * Math.PI); return a < 0 ? a + 2 * Math.PI : a; }
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function gaussian(rng) {
+    var u = 0; while (u === 0) u = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng());
+  }
+
+  return { FS: FS, BLANK: BLANK, GATE_DEG: GATE_DEG, TERM_FRAC: TERM_FRAC, T_POST: T_POST,
+           Epileptor: Epileptor, NeuralMass: NeuralMass, pulseWave: pulseWave, rk4Work: rk4Work, step: step,
+           pulseSamples: pulseSamples, findLandmarks: findLandmarks, windowAmp: windowAmp, ptp: ptp,
+           timeToTermination: timeToTermination, outcome: outcome, rsuppWindows: rsuppWindows, characterise: characterise,
+           rbarGauss: rbarGauss, circSdDeg: circSdDeg, Tracker: Tracker, trackerFor: trackerFor, wrap2pi: wrap2pi,
+           mulberry32: mulberry32, gaussian: gaussian };
+})();
+</script>
+<!-- MODEL-CORE-END -->
+<script id="sc-app">
+"use strict";
+(function () {
+  var SC = SCcore, TAU = 2 * Math.PI, DEG = 180 / Math.PI;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------------------------------------------------------------- what the characterisation JSONs say (bistable windows)
+  var INFO = {
+    epileptor: {
+      label: "Epileptor", unit: "a.u.", unitLong: "Epileptor current units (those of Iext = 3.1)", chargeUnit: "a.u.·ms",
+      pulseText: "1 ms per phase, leading phase negative (pushes x1 down, towards rest); added to dx1/dt.",
+      params: [{ key: "z", label: "Slow variable z (frozen)", min: 2.8, max: 4.0, step: 0.005, op: 3.5, lo: 2.915, hi: 3.895, dec: 3 }],
+      planeNote: "Fast subsystem: x1 (horizontal) against y1 (vertical). The resting point lies far below the cycle on the x1 < 0 branch.",
+      regime: function (v) {
+        var z = v.z;
+        if (z < 2.915) return ["seizure only", "below the saddle-node at z = 2.915 the resting state does not exist"];
+        if (z <= 3.895) return ["rest and seizure coexist", "inside the bistable window 2.915 ≤ z ≤ 3.895 (operating point 3.5)"];
+        if (z <= 3.995) return ["no seizure cycle", "above 3.895 the cycle is gone; the seizure start ends on a fixed point of the upper branch (x1 ≈ +0.25), or at rest"];
+        return ["rest only", "far above the window"];
+      }
+    },
+    neural_mass: {
+      label: "Neural mass", unit: "mV", unitLong: "mV (shift of each population's mean membrane potential)", chargeUnit: "mV·ms",
+      pulseText: "2 ms per phase, leading phase positive (depolarising); added inside the sigmoid of all four populations.",
+      params: [{ key: "p", label: "Input to pyramidal cells p (1/s)", min: 310, max: 330, step: 0.25, op: 320, lo: 314.5, hi: 324.5, dec: 2 },
+               { key: "B", label: "Slow dendritic inhibition gain B (mV)", min: 58.5, max: 61.5, step: 0.05, op: 60, lo: 59.2, hi: 61.0, dec: 2 }],
+      planeNote: "EEG = y1 − y2 − y3 (horizontal) against the pyramidal output y0 (vertical), as in the model's figure.",
+      regime: function (v) {
+        // one-at-a-time windows (p 314.5-324.5 at B = 60; B 59.2-61.0 at p = 320); with both moved, the window in p shifted by
+        // 5.5 /s per mV of B (the slope that joins the two one-at-a-time windows and follows the (B, p) regime map's band)
+        var both = Math.abs(v.B - 60) > 1e-9 && Math.abs(v.p - 320) > 1e-9, pe = v.p - 5.5 * (v.B - 60);
+        var tail = both ? " (both moved: window estimated from the (B, p) regime map's band, approximate)" : "";
+        if (pe < 314.5) return ["rest only", "the input is too low for a seizure cycle" + tail];
+        if (pe <= 324.5) return ["rest and seizure coexist", "inside the bistable window" + (both ? "" : (Math.abs(v.B - 60) > 1e-9 ? " 59.2 ≤ B ≤ 61.0" : " 314.5 ≤ p ≤ 324.5")) + tail];
+        return ["seizure only", "the resting state has lost its stability (subcritical Hopf)" + tail];
+      }
+    }
+  };
+  var PRESETS = [
+    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 94, title: "Epileptor: a phase that terminates",
+      text: "22.32 a.u. at 94°. The map terminates from 34° to 334° at this amplitude." },
+    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 11, title: "Epileptor: same amplitude, a phase that fails",
+      text: "22.32 a.u. at 11°: just after the landmark the same pulse does not end the seizure." },
+    { model: "epileptor", par: { z: 3.8 }, kind: "biphasic", amp: 18.0, target: 94, title: "Epileptor near the offset edge (z = 3.8)",
+      text: "18 a.u. at 94° terminates here; at z = 3.5 no phase terminates below 18.7 a.u. The cycle is slower (2.6 Hz)." },
+    { model: "neural_mass", par: { p: 320, B: 60 }, kind: "biphasic", amp: 3.2, target: 19, title: "Neural mass: a phase that terminates",
+      text: "3.2 mV at 19°. Termination needs the right phase and an amplitude inside a band (2.4–4.6 mV)." },
+    { model: "neural_mass", par: { p: 320, B: 60 }, kind: "biphasic", amp: 3.2, target: 199, title: "Neural mass: same amplitude, a phase that fails",
+      text: "3.2 mV at 199°: the seizure continues." },
+    { model: "neural_mass", par: { p: 320, B: 60 }, kind: "biphasic", amp: 6.4, target: 19, title: "Neural mass: overshoot",
+      text: "6.4 mV at 19°, above the terminating band: the pulse crosses the thin basin of rest and the seizure resumes." },
+    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 94, snr: 1, source: "tracked", title: "Epileptor: tracked phase at SNR 1",
+      text: "The terminating case, timed by the tracker from a noisy EEG. It waits for the tracker to calibrate (about 6 s)." }
+  ];
+
+  // ---------------------------------------------------------------- state
+  var NBUF = 8192, WIN = 5000;
+  var S = {
+    name: "epileptor", models: { epileptor: new SC.Epileptor(), neural_mass: new SC.NeuralMass() },
+    par: { epileptor: { z: 3.5 }, neural_mass: { p: 320, B: 60 } },
+    amp: { epileptor: 22.32, neural_mass: 3.2 }, kind: "biphasic",
+    charCache: {}, rng: SC.mulberry32(20261112), snr: 30, noiseSd: 0, speed: 1, running: true,
+    target: 90, source: "true", repeat: false,
+    clean: new Float32Array(NBUF), noisy: new Float32Array(NBUF), tph: new Float32Array(NBUF), kph: new Float32Array(NBUF),
+    ksd: new Float32Array(NBUF), lms: [], pulses: [], hist: { epileptor: [], neural_mass: [] }, nPulse: 0
+  };
+  function M() { return S.models[S.name]; }
+
+  // ---------------------------------------------------------------- characterisation and tracker
+  function charKey() { var p = S.par[S.name]; return S.name + JSON.stringify(p); }
+  function getChar() {
+    var k = charKey();
+    if (!S.charCache[k]) {
+      var keys = Object.keys(S.charCache); if (keys.length > 24) delete S.charCache[keys[0]];
+      S.charCache[k] = SC.characterise(M());
+    }
+    return S.charCache[k];
+  }
+  function applyParams() {
+    var m = M(), p = S.par[S.name];
+    for (var key in p) m.setParam(key, p[key], S.X);
+    m.setKind(S.kind);
+  }
+  function setupChar() {
+    S.c = getChar();
+    var c = S.c;
+    if (c.ok) {
+      S.noiseSd = isFinite(S.snr) ? c.lcSd / Math.sqrt(S.snr) : 0;
+      S.lcPlane = c.lcX.map(function (x) { return M().plane(x); });
+      S.ylo = Math.min.apply(null, c.lcEeg) - 0.3 * c.lcP2p; S.yhi = Math.max.apply(null, c.lcEeg) + 0.3 * c.lcP2p;
+      if (c.fpX) { S.ylo = Math.min(S.ylo, c.fpEeg - 0.1 * c.lcP2p); S.yhi = Math.max(S.yhi, c.fpEeg + 0.1 * c.lcP2p); }
+    } else {
+      S.lcPlane = null;
+    }
+    S.restPlane = c.fpX ? M().plane(c.fpX) : null;
+    setupPlaneBounds();
+    buildTracker();
+  }
+  function buildTracker() {
+    var c = S.c;
+    if (!c.ok) { S.trk = null; S.trkMode = "off"; return; }
+    S.trk = SC.trackerFor(c, S.snr);
+    S.trkMode = "settle"; S.trkT0 = S.t; S.cal = { tp: [], raw: [], nu: [] }; S.calInfo = null;
+  }
+  function setupPlaneBounds() {
+    var pts = (S.lcPlane || []).slice(); if (S.restPlane) pts.push(S.restPlane);
+    if (!pts.length) pts = [M().plane(S.X || M().seizureIC())];
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    pts.forEach(function (q) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    var dx = (x1 - x0) || 1, dy = (y1 - y0) || 1;
+    S.pb = { x0: x0 - 0.35 * dx, x1: x1 + 0.35 * dx, y0: y0 - 0.25 * dy, y1: y1 + 0.25 * dy };
+  }
+
+  // ---------------------------------------------------------------- (re)starting the model
+  function onCycle() {
+    // put the state on the stored seizure cycle at its first sample (just after a landmark)
+    var c = S.c;
+    if (c.ok) {
+      S.X = Float64Array.from(c.lcX[0]); S.lastLm = S.t - (Math.ceil(c.keepLm[0]) - c.keepLm[0]);
+      // the past of the trace is the stored cycle (the state "was" on it): fill the buffers with it, so that the
+      // display and the pre-pulse window of R_supp are those of an ongoing seizure, as in response_map
+      for (var s = S.t; s > S.t - NBUF + 1 && s >= 1; s--) {
+        var ph = SC.wrap2pi(TAU * (s - S.lastLm) / c.T) / TAU, v = cycleAt(c, ph), i = s % NBUF;
+        S.clean[i] = v; S.noisy[i] = v + (S.noiseSd > 0 ? S.noiseSd * SC.gaussian(S.rng) : 0); S.tph[i] = ph * TAU; S.kph[i] = NaN; S.ksd[i] = NaN;
+      }
+      S.lms = []; for (var q = S.lastLm - 30 * c.T; q <= S.lastLm + 1e-9; q += c.T) if (q > S.t - WIN) S.lms.push(q);
+      S.lms[S.lms.length - 1] = S.lastLm;
+    }
+    else if (c.fpX) { S.X = Float64Array.from(c.fpX); S.lastLm = -Infinity; }
+    else { S.X = M().seizureIC(); S.lastLm = -Infinity; }
+    S.prevClean = M().eeg(S.X); S.nSeizure = 0; S.lmSincePulse = 0; S.trail = []; S.szStart = -Infinity;
+  }
+  function cycleAt(c, ph) {   // noise-free EEG of the stored cycle at phase ph (0..1), linear interpolation in the kept record
+    var x = c.keepLm[0] + ph * c.T, i = Math.floor(x), f = x - i;
+    return c.keepEeg[i] * (1 - f) + c.keepEeg[i + 1] * f;
+  }
+  function fullReset() {
+    S.t = NBUF; S.tStart = NBUF; S.lms = []; S.pulses = []; S.pulse = null; S.arm = null; S.agn = null; S.manual = false;
+    S.clean.fill(NaN); S.noisy.fill(NaN); S.tph.fill(NaN); S.kph.fill(NaN); S.ksd.fill(NaN);
+    S.ws = SC.rk4Work(M().n); applyParams(); setupChar(); onCycle(); S.interval = S.c.ok ? S.c.T : NaN;
+    S.prevPh = NaN; setArmUI(); msg("");
+  }
+  function startSeizure() {
+    var c = S.c;
+    if (!c.ok) { msg("No seizure cycle exists at this parameter value, so a seizure cannot be started."); return; }
+    S.X = Float64Array.from(c.seizureIC); applyParams(); S.prevClean = M().eeg(S.X); S.nSeizure = 0; S.szStart = S.t;
+    msg("Seizure started from the model's seizure initial state (as seizure_ic in the Python class).");
+  }
+
+  // ---------------------------------------------------------------- one millisecond of the simulation
+  function seizureOn() { return S.c.ok && S.t - S.lastLm < 2 * S.c.T; }
+  function lastPulse() { return S.pulses.length ? S.pulses[S.pulses.length - 1] : null; }
+  function tick() {
+    var m = M(), c = S.c, amp = 0, ns = null, np = SC.pulseSamples(m);
+    if (S.pulse && S.t - S.pulse.t0 < np) { amp = S.pulse.amp; ns = S.t - S.pulse.t0; }
+    var e = SC.step(m, S.X, amp, ns, S.ws);
+    S.t++;
+    var y = e + (S.noiseSd > 0 ? S.noiseSd * SC.gaussian(S.rng) : 0);
+    // landmarks of the noise-free EEG (true phase)
+    if (c.ok && S.prevClean < c.level && e >= c.level) {
+      var tl = S.t - 1 + (c.level - S.prevClean) / (e - S.prevClean);
+      if (tl - S.lastLm >= 0.2 * c.T) {
+        S.interval = tl - S.lastLm; S.lastLm = tl; S.lms.push(tl); S.lmSincePulse++;
+        if (S.lms.length > 64) S.lms.shift();
+      }
+    }
+    S.prevClean = e;
+    var tph = seizureOn() ? SC.wrap2pi(TAU * (S.t - S.lastLm) / c.T) : NaN;
+    // tracker (predict only during the 15-ms blank after pulse onset)
+    var lp = lastPulse(), blank = !!(lp && S.t > lp.t0 && S.t <= lp.t0 + SC.BLANK);
+    var kph = NaN, ksd = NaN;
+    if (S.trk) {
+      S.trk.step(y, !blank);
+      ksd = S.trk.sdDeg();
+      if (S.trkMode === "settle" && S.t - S.trkT0 >= 1500) S.trkMode = "calib";
+      if (S.trkMode === "calib" && !isNaN(tph) && !blank && !(lp && S.t - lp.t0 < 2 * c.T)) {
+        S.cal.tp.push(tph); S.cal.raw.push(S.trk.phaseRaw()); S.cal.nu.push(S.trk.nu());
+        if (S.cal.tp.length >= 4000) { S.calInfo = S.trk.calibrate(S.cal.tp, S.cal.raw, S.cal.nu); S.trkMode = "on"; }
+      }
+      if (S.trkMode === "on") { kph = S.trk.phase(); ksd = S.trk.sdDeg(); }
+    }
+    var i = S.t % NBUF;
+    S.clean[i] = e; S.noisy[i] = y; S.tph[i] = tph; S.kph[i] = kph; S.ksd[i] = ksd;
+    // pulses under observation
+    for (var j = 0; j < S.pulses.length; j++) {
+      var p = S.pulses[j];
+      if (p.result) continue;
+      p.post.push(e);
+      if (p.trail.length < 1200) p.trail.push(m.plane(S.X));
+      if (p.post.length >= SC.T_POST) finishPulse(p);
+    }
+    if (S.trail) { S.trail.push(m.plane(S.X)); if (S.trail.length > 400) S.trail.shift(); }
+    // delivery
+    if (S.manual) { S.manual = false; fire("manual"); }
+    if (S.agn && S.t >= S.agn.tFire) { S.agn = null; fire("phase-agnostic"); }
+    if (S.arm) armedStep(tph, kph, ksd);
+  }
+
+  function armedStep(tph, kph, ksd) {
+    var c = S.c, A = S.arm, ph = A.source === "true" ? tph : kph, prev = S.prevPh;
+    S.prevPh = ph;
+    if (!c.ok || isNaN(ph) || isNaN(prev)) {
+      if (A.source === "tracked" && S.trkMode !== "on") A.note = "waiting for the tracker to calibrate";
+      return;
+    }
+    var tgt = A.target * TAU / 360, stepPh = SC.wrap2pi(ph - prev), d = SC.wrap2pi(tgt - prev);
+    if (!(stepPh < Math.PI && d > 0 && d <= stepPh)) return;
+    if (S.t < A.skipUntil) return;
+    var lp = lastPulse();
+    if (A.repeat && lp && (S.t - lp.t0 < 2 * c.T || S.lmSincePulse < 2)) return;   // >= two free periods, seizure resumed
+    if (A.source === "tracked" && !(ksd < SC.GATE_DEG)) {
+      A.skipped++; A.skipUntil = S.t + Math.round(0.5 * c.T);
+      A.note = "wave skipped: tracker uncertainty " + ksd.toFixed(0) + "° ≥ 40° (" + A.skipped + " skipped so far)";
+      return;
+    }
+    fire("phase-locked (" + (A.source === "true" ? "true" : "tracked") + ")");
+    if (!A.repeat) { S.arm = null; setArmUI(); }
+    else if (S.nSeizure >= 10) { S.arm = null; setArmUI(); msg("Repeat stopped after 10 pulses in this seizure (the engine's limit per seizure)."); }
+  }
+
+  function fire(mode) {
+    var c = S.c, m = M(), lp = lastPulse();
+    if (S.pulse && S.t - S.pulse.t0 < SC.BLANK) return;
+    var i = S.t % NBUF, amp = S.amp[S.name];
+    var nw = c.ok ? Math.round(2 * c.T) : 0, pre = [];
+    var preCycle = c.ok && S.t - nw < S.szStart;   // seizure (re)started from seizure_ic less than two periods ago
+    for (var s = S.t - nw; s < S.t; s++) pre.push(preCycle ? cycleAt(c, SC.wrap2pi(TAU * (s - S.t) / c.T + S.tph[i]) / TAU) : s >= 1 ? S.clean[s % NBUF] : NaN);
+    if (lp && !lp.result) lp.contaminated = true;
+    S.nPulse++; S.nSeizure++;
+    var p = { n: S.nPulse, model: S.name, t0: S.t, mode: mode, amp: amp, kind: S.kind, width: m.width,
+              tph: S.tph[i], kph: S.kph[i], ksd: S.ksd[i], trkOn: S.trkMode === "on", c: c, pre: pre, post: [], trail: [m.plane(S.X)],
+              result: null, nSeizure: S.nSeizure };
+    S.pulses.push(p); if (S.pulses.length > 12) S.pulses.shift();
+    S.pulse = { t0: S.t, amp: amp }; S.lmSincePulse = 0;
+    updateResult();
+  }
+
+  function finishPulse(p) {
+    var c = p.c;
+    if (!c.ok) { p.result = { na: true }; return; }
+    var preOk = p.pre.every(function (v) { return !isNaN(v); });
+    p.result = SC.outcome(preOk ? p.pre : p.post.slice(0, 1), p.post, c);
+    if (!preOk) { p.result.rsupp = NaN; p.result.rsuppLate = NaN; }
+    S.hist[p.model].push(p); addRow(p); updateResult();
+    if (S.arm && S.arm.repeat && p.result.terminated && p === lastPulse()) {
+      S.arm = null; setArmUI(); msg("Seizure terminated after " + p.nSeizure + " pulse" + (p.nSeizure > 1 ? "s" : "") + "; repeat stopped.");
+    }
+  }
+
+  // ---------------------------------------------------------------- UI: parameter sliders
+  function buildParamUI() {
+    var info = INFO[S.name], host = $("parSliders"); host.innerHTML = "";
+    info.params.forEach(function (q) {
+      var span = q.max - q.min, id = "par-" + q.key, v = S.par[S.name][q.key];
+      var div = document.createElement("div");
+      div.innerHTML = '<div class="lab"><label for="' + id + '">' + q.label + '</label><output id="' + id + '-o"></output></div>' +
+        '<input type="range" id="' + id + '" min="' + q.min + '" max="' + q.max + '" step="' + q.step + '" value="' + v + '">' +
+        '<div class="track" aria-hidden="true"><div class="band" style="left:' + (100 * (q.lo - q.min) / span) + '%;width:' + (100 * (q.hi - q.lo) / span) + '%"></div>' +
+        '<div class="op" style="left:' + (100 * (q.op - q.min) / span) + '%"></div></div>' +
+        '<div class="ticks"><span>' + q.min + '</span><span>bistable ' + q.lo + '–' + q.hi + ' (bar), operating point ' + q.op + ' (tick)</span><span>' + q.max + '</span></div>';
+      host.appendChild(div);
+      var inp = div.querySelector("input"), out = div.querySelector("output");
+      out.textContent = (+v).toFixed(q.dec);
+      inp.addEventListener("input", function () {
+        S.par[S.name][q.key] = +inp.value; out.textContent = (+inp.value).toFixed(q.dec);
+        applyParams(); updateRegime();
+        clearTimeout(S.charTimer); S.charTimer = setTimeout(function () { setupChar(); updateRegime(); }, 200);
+      });
+    });
+    var b = document.createElement("button"); b.textContent = "Back to the operating point"; b.style.marginTop = "6px";
+    b.addEventListener("click", function () {
+      info.params.forEach(function (q) { S.par[S.name][q.key] = q.op; });
+      buildParamUI(); applyParams(); setupChar(); updateRegime();
+    });
+    host.appendChild(b);
+    $("planeNote").textContent = info.planeNote;
+    updateRegime();
+  }
+  function updateRegime() {
+    var r = INFO[S.name].regime(S.par[S.name]);
+    $("regime").innerHTML = "State: <b>" + r[0] + "</b>; " + r[1] + ".";
+  }
+
+  // ---------------------------------------------------------------- UI: stimulus
+  function buildAmpUI() {
+    var m = M(), a = $("amp"), st = m.ampMax / 50;
+    a.min = st; a.max = m.ampMax; a.step = st;
+    var v = Math.min(Math.max(S.amp[S.name], st), m.ampMax);
+    v = Math.round(v / st) * st; S.amp[S.name] = +v.toFixed(4); a.value = S.amp[S.name];
+    showAmp();
+  }
+  function showAmp() {
+    var m = M(), info = INFO[S.name], a = S.amp[S.name];
+    $("ampOut").textContent = a.toFixed(2) + " " + info.unit;
+    $("pulseInfo").textContent = "Charge per phase " + (a * m.width * 1e3).toFixed(2) + " " + info.chargeUnit + ". " + info.pulseText + " Grid: " + (m.ampMax / 50).toFixed(2) + " to " + m.ampMax + " " + info.unitLong + " in 50 steps.";
+  }
+
+  // ---------------------------------------------------------------- UI: arming and messages
+  function msg(t) { S.msgText = t; S.msgT = performance.now(); }
+  function setArmUI() {
+    var b = $("arm"), on = !!S.arm;
+    b.textContent = on ? "Disarm" : "Arm: fire at the next crossing"; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+  }
+  function arm() {
+    S.arm = { target: S.target, source: S.source, repeat: S.repeat, skipped: 0, skipUntil: 0, note: "" };
+    S.prevPh = NaN; setArmUI();
+  }
+  function setTarget(v) {
+    v = ((Math.round(v) % 360) + 360) % 360; S.target = v; $("target").value = v;
+    $("dial").setAttribute("aria-valuenow", v);
+    if (S.arm) S.arm.target = v;
+  }
+
+  // ---------------------------------------------------------------- UI: results
+  function fmtDeg(r) { return isNaN(r) ? "–" : (r * DEG).toFixed(0) + "°"; }
+  function fmtR(x) { return isNaN(x) ? "–" : x >= 100 ? x.toFixed(0) : x.toFixed(2); }
+  function addRow(p) {
+    var r = p.result, info = INFO[p.model], tr = document.createElement("tr");
+    var cells = [p.n, p.mode + (p.contaminated ? " *" : ""), fmtDeg(p.tph), p.trkOn ? fmtDeg(p.kph) + " ± " + p.ksd.toFixed(0) + "°" : "not calibrated",
+      p.amp.toFixed(2) + " " + info.unit, (p.amp * p.width * 1e3).toFixed(2) + " " + info.chargeUnit, p.kind,
+      r.terminated ? "terminated" : "not terminated", fmtR(r.rsupp), fmtR(r.rsuppLate), isNaN(r.tTerm) ? "–" : r.tTerm.toFixed(2) + " s"];
+    cells.forEach(function (v, k) { var td = document.createElement("td"); td.textContent = v; if (k === 7) td.className = r.terminated ? "tOK" : "tNO"; tr.appendChild(td); });
+    if (p.contaminated) tr.title = "Another pulse was delivered within this pulse's 2-s observation window";
+    if (p.model === S.name) $("hist").insertBefore(tr, $("hist").firstChild);
+  }
+  function rebuildTable() { $("hist").innerHTML = ""; S.hist[S.name].forEach(addRow); }
+  function updateResult() {
+    var p = lastPulse(), el = $("result");
+    if (!p) { el.className = "result"; el.textContent = "No pulse delivered yet."; return; }
+    var info = INFO[p.model];
+    var head = "Pulse " + p.n + " (" + p.mode + "): true phase " + fmtDeg(p.tph) +
+      (p.trkOn ? ", tracked " + fmtDeg(p.kph) + " ± " + p.ksd.toFixed(0) + "°" : "") + ", " + p.amp.toFixed(2) + " " + info.unit + " " + p.kind;
+    if (!p.result) { el.className = "result wait"; el.textContent = head + " — observing the 2 s after the pulse (" + ((SC.T_POST - p.post.length) / 1000).toFixed(1) + " s left)"; return; }
+    if (p.result.na) { el.className = "result"; el.textContent = head + " — no seizure cycle, no outcome."; return; }
+    var r = p.result;
+    el.className = "result " + (r.terminated ? "ok" : "bad");
+    el.textContent = head + " → " + (r.terminated ? "terminated in " + r.tTerm.toFixed(2) + " s" : "not terminated") +
+      "; R_supp early " + fmtR(r.rsupp) + ", late " + fmtR(r.rsuppLate) + (p.contaminated ? " (another pulse followed within 2 s)" : "");
+  }
+
+  // ---------------------------------------------------------------- drawing
+  var CV = {};
+  function colors() {
+    var cs = getComputedStyle(document.documentElement), g = function (n) { return cs.getPropertyValue(n).trim(); };
+    S.col = { bg: g("--bg"), ink: g("--ink"), muted: g("--muted"), faint: g("--faint"), grid: g("--grid"), truth: g("--truth"),
+              trk: g("--trk"), stim: g("--stim"), ok: g("--ok"), bad: g("--bad"), trkSoft: g("--trk-soft"), stimSoft: g("--stim-soft") };
+  }
+  function sizeCanvas(id) {
+    var cv = $(id), dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    CV[id] = { cv: cv, ctx: ctx, w: w, h: h };
+  }
+  function resizeAll() { ["eeg", "dial", "plane", "map"].forEach(sizeCanvas); }
+
+  function drawEEG() {
+    var o = CV.eeg, ctx = o.ctx, w = o.w, h = o.h, C = S.col, c = S.c;
+    ctx.clearRect(0, 0, w, h);
+    var L = 46, R = 8, pw = w - L - R, gap = 10, laneH = (h - 18 - 2 * gap) * 0.4, phH = (h - 18 - 2 * gap) * 0.2;
+    var lanes = [{ y: 0, h: laneH }, { y: laneH + gap, h: laneH }, { y: 2 * (laneH + gap), h: phH }];
+    var t1 = S.t, t0 = t1 - WIN, xs = function (s) { return L + (s - t0) / WIN * pw; };
+    ctx.font = "11px system-ui, sans-serif"; ctx.textBaseline = "middle";
+    // grid: seconds
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.fillStyle = C.faint; ctx.textAlign = "center";
+    for (var k = 0; k <= 5; k++) {
+      var x = Math.round(L + k / 5 * pw) + 0.5; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h - 16); ctx.stroke();
+      ctx.fillText(k === 5 ? "now" : "−" + (5 - k) + " s", x, h - 7);
+    }
+    ctx.textAlign = "right"; ctx.fillStyle = C.muted;
+    ctx.fillText("obs.", L - 6, lanes[0].y + lanes[0].h / 2); ctx.fillText("clean", L - 6, lanes[1].y + lanes[1].h / 2);
+    var lo = S.ylo, hi = S.yhi;
+    if (!isFinite(lo)) { lo = -1; hi = 1; }
+    function yv(lane, v) { return lane.y + lane.h * (1 - (v - lo) / (hi - lo)); }
+    // pulses: blank shading and onset lines
+    S.pulses.forEach(function (p) {
+      if (p.t0 < t0) return;
+      ctx.fillStyle = C.stimSoft; ctx.fillRect(xs(p.t0), 0, Math.max(xs(p.t0 + SC.BLANK) - xs(p.t0), 2), lanes[2].y + phH);
+      ctx.strokeStyle = C.stim; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(xs(p.t0), 0); ctx.lineTo(xs(p.t0), lanes[2].y + phH); ctx.stroke();
+    });
+    // traces (min/max per pixel column)
+    function trace(arr, lane, color, lw) {
+      ctx.save(); ctx.beginPath(); ctx.rect(L, lane.y, pw, lane.h); ctx.clip();
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath();
+      var per = WIN / pw, started = false;
+      for (var px = 0; px < pw; px++) {
+        var s0 = Math.floor(t0 + px * per), s1 = Math.floor(t0 + (px + 1) * per), mn = Infinity, mx = -Infinity;
+        for (var s = Math.max(s0, 1); s < Math.max(s1, s0 + 1); s++) { if (s > t1) break; var v = arr[s % NBUF]; if (v < mn) mn = v; if (v > mx) mx = v; }
+        if (mn === Infinity || isNaN(mn)) { started = false; continue; }
+        var x = L + px + 0.5;
+        if (!started) { ctx.moveTo(x, yv(lane, mx)); started = true; } else ctx.lineTo(x, yv(lane, mx));
+        if (mn !== mx) ctx.lineTo(x, yv(lane, mn));
+      }
+      ctx.stroke(); ctx.restore();
+    }
+    trace(S.noisy, lanes[0], C.ink, 1);
+    if (c.ok) {   // landmark level
+      ctx.setLineDash([3, 4]); ctx.strokeStyle = C.grid; ctx.beginPath(); var yl = yv(lanes[1], c.level); ctx.moveTo(L, yl); ctx.lineTo(L + pw, yl); ctx.stroke(); ctx.setLineDash([]);
+    }
+    trace(S.clean, lanes[1], C.truth, 1.6);
+    ctx.strokeStyle = C.truth; ctx.lineWidth = 1.2;
+    S.lms.forEach(function (tl) { if (tl < t0) return; var x = xs(tl); ctx.beginPath(); ctx.moveTo(x, lanes[1].y + lanes[1].h - 7); ctx.lineTo(x, lanes[1].y + lanes[1].h); ctx.stroke(); });
+    // phase lane: true (grey) and tracked (blue, faint when the gate is closed); target line
+    var pl = lanes[2];
+    ctx.strokeStyle = C.grid; ctx.strokeRect(L + 0.5, pl.y + 0.5, pw - 1, pl.h - 1);
+    { var yt = pl.y + pl.h * (1 - S.target / 360); ctx.setLineDash([4, 3]); ctx.strokeStyle = C.stim; ctx.beginPath(); ctx.moveTo(L, yt); ctx.lineTo(L + pw, yt); ctx.stroke(); ctx.setLineDash([]); }
+    var per = WIN / pw;
+    for (var px = 0; px < pw; px += 1) {
+      var s = Math.floor(t0 + px * per); if (s < 1 || s > t1) continue;
+      var a = S.tph[s % NBUF], b = S.kph[s % NBUF], sd = S.ksd[s % NBUF];
+      if (!isNaN(a)) { ctx.fillStyle = C.truth; ctx.fillRect(L + px, pl.y + pl.h * (1 - a / TAU) - 0.75, 1, 1.5); }
+      if (!isNaN(b)) { ctx.fillStyle = sd < SC.GATE_DEG ? C.trk : C.trkSoft; ctx.fillRect(L + px, pl.y + pl.h * (1 - b / TAU) - 1, 1, 2); }
+    }
+    ctx.fillStyle = C.faint; ctx.textAlign = "left"; ctx.fillText("360°", 2, pl.y + 6); ctx.fillText("0°", 2, pl.y + pl.h - 5);
+  }
+
+  function drawDial() {
+    var o = CV.dial, ctx = o.ctx, w = o.w, h = o.h, C = S.col, cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 22;
+    ctx.clearRect(0, 0, w, h);
+    var ang = function (rad) { return rad - Math.PI / 2; };     // 0 at top, clockwise
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    ctx.lineWidth = 1; ctx.strokeStyle = C.faint; ctx.fillStyle = C.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (var d = 0; d < 360; d += 30) {
+      var a = ang(d / DEG), r0 = R + 6, r1 = R + (d % 90 ? 9 : 12);
+      ctx.beginPath(); ctx.moveTo(cx + r0 * Math.cos(a), cy + r0 * Math.sin(a)); ctx.lineTo(cx + r1 * Math.cos(a), cy + r1 * Math.sin(a)); ctx.stroke();
+      if (d % 90 === 0 && !(d === 180 && R < 110)) ctx.fillText(d + "°", cx + (R - 20) * Math.cos(a), cy + (R - 20) * Math.sin(a));
+    }
+    var i = S.t % NBUF, tph = S.tph[i], kph = S.kph[i], ksd = S.ksd[i];
+    if (!isNaN(kph)) {   // tracked: arc of +- SD
+      var sdr = Math.min(ksd, 179) / DEG;
+      ctx.strokeStyle = C.trkSoft; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(cx, cy, R, ang(kph - sdr), ang(kph + sdr)); ctx.stroke();
+      hand(kph, C.trk, 2.5, R - 4);
+    }
+    if (!isNaN(tph)) hand(tph, C.truth, 2.5, R - 14);
+    // target marker
+    var ta = ang(S.target / DEG);
+    ctx.fillStyle = C.stim; ctx.beginPath();
+    ctx.moveTo(cx + (R + 4) * Math.cos(ta), cy + (R + 4) * Math.sin(ta));
+    ctx.lineTo(cx + (R + 17) * Math.cos(ta - 0.09), cy + (R + 17) * Math.sin(ta - 0.09));
+    ctx.lineTo(cx + (R + 17) * Math.cos(ta + 0.09), cy + (R + 17) * Math.sin(ta + 0.09)); ctx.fill();
+    ctx.strokeStyle = C.stim; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(ta), cy + R * Math.sin(ta)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, TAU); ctx.fill();
+    // read-out
+    ctx.font = "11.5px system-ui, sans-serif"; ctx.fillStyle = C.muted; ctx.textAlign = "center";
+    var ry = cy + Math.max(12, R * 0.14), lh = 13.5;
+    ctx.fillText("target " + S.target + "°", cx, ry);
+    ctx.fillStyle = C.truth; ctx.fillText(isNaN(tph) ? "no wave" : "true " + (tph * DEG).toFixed(0) + "°", cx, ry + lh);
+    ctx.fillStyle = C.trk; ctx.fillText(S.trkMode === "on" ? (isNaN(kph) ? "" : "tracked " + (kph * DEG).toFixed(0) + "° ± " + ksd.toFixed(0) + "°") : trackerShort(), cx, ry + 2 * lh);
+    function hand(rad, col, lw, len) {
+      var a = ang(rad); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + len * Math.cos(a), cy + len * Math.sin(a)); ctx.stroke(); ctx.lineCap = "butt";
+    }
+  }
+  function trackerShort() {
+    if (S.trkMode === "off") return "tracker off";
+    if (S.trkMode === "settle") return "tracker settling";
+    if (S.trkMode === "calib") return "tracker calibrating";
+    return "";
+  }
+
+  function drawPlane() {
+    var o = CV.plane, ctx = o.ctx, w = o.w, h = o.h, C = S.col, b = S.pb, pad = 28;
+    ctx.clearRect(0, 0, w, h);
+    var X = function (v) { return pad + (v - b.x0) / (b.x1 - b.x0) * (w - pad - 8); };
+    var Y = function (v) { return h - pad - (v - b.y0) / (b.y1 - b.y0) * (h - pad - 8); };
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.strokeRect(pad + 0.5, 8.5, w - pad - 8, h - pad - 8);
+    ctx.save(); ctx.beginPath(); ctx.rect(pad, 8, w - pad - 8, h - pad - 8); ctx.clip();
+    if (S.lcPlane) {
+      ctx.strokeStyle = C.truth; ctx.lineWidth = 2; ctx.beginPath();
+      S.lcPlane.forEach(function (q, k) { if (k) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
+      ctx.closePath(); ctx.stroke();
+    }
+    S.pulses.forEach(function (p, k) {
+      if (p.model !== S.name || !p.trail.length) return;
+      var age = S.pulses.length - 1 - k; if (age > 2) return;
+      ctx.globalAlpha = age === 0 ? 1 : 0.4; ctx.strokeStyle = C.stim; ctx.lineWidth = 1.3; ctx.beginPath();
+      p.trail.forEach(function (q, j) { if (j) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
+      ctx.stroke();
+      if (p.result && !p.result.na) { var q = p.trail[p.trail.length - 1]; ctx.fillStyle = p.result.terminated ? C.ok : C.bad; ctx.beginPath(); ctx.arc(X(q[0]), Y(q[1]), 4, 0, TAU); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    });
+    if (S.trail && S.trail.length > 1) {
+      ctx.strokeStyle = C.faint; ctx.lineWidth = 1; ctx.beginPath();
+      S.trail.forEach(function (q, j) { if (j) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
+      ctx.stroke();
+    }
+    if (S.restPlane) {
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(S.restPlane[0]), Y(S.restPlane[1]), 5, 0, TAU); ctx.stroke();
+      ctx.fillStyle = C.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText("rest", X(S.restPlane[0]) + 8, Y(S.restPlane[1]));
+    }
+    var q0 = M().plane(S.X); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(X(q0[0]), Y(q0[1]), 4, 0, TAU); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = C.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    var lab = S.name === "epileptor" ? ["x1", "y1"] : ["EEG (mV)", "y0 (mV)"];
+    ctx.fillText(lab[0], pad + (w - pad - 8) / 2, h - 8);
+    ctx.save(); ctx.translate(12, 8 + (h - pad - 8) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(lab[1], 0, 0); ctx.restore();
+  }
+
+  function drawMap() {
+    var o = CV.map, ctx = o.ctx, w = o.w, h = o.h, C = S.col, cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 22, m = M();
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.font = "10.5px system-ui, sans-serif"; ctx.fillStyle = C.faint; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for (var k = 1; k <= 4; k++) { ctx.beginPath(); ctx.arc(cx, cy, R * k / 4, 0, TAU); ctx.stroke(); ctx.fillText((m.ampMax * k / 4).toFixed(k === 4 ? 0 : 1), cx + 3, cy - R * k / 4 + 7); }
+    for (var d = 0; d < 360; d += 45) { var a = d / DEG - Math.PI / 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a)); ctx.stroke(); }
+    ctx.fillStyle = C.muted; ctx.textAlign = "center";
+    [0, 90, 180, 270].forEach(function (d) { var a = d / DEG - Math.PI / 2; ctx.fillText(d + "°", cx + (R + 12) * Math.cos(a), cy + (R + 12) * Math.sin(a)); });
+    S.hist[S.name].forEach(function (p) {
+      if (p.result.na || isNaN(p.tph)) return;
+      var rr = Math.min(p.amp / m.ampMax, 1.06) * R, a = p.tph - Math.PI / 2, col = p.result.terminated ? C.ok : C.bad;
+      ctx.beginPath(); ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 4, 0, TAU);
+      if (p.kind === "biphasic") { ctx.fillStyle = col; ctx.fill(); } else { ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke(); }
+    });
+    ctx.fillStyle = C.faint; ctx.textAlign = "right"; ctx.fillText(INFO[S.name].unit, w - 4, h - 8);
+  }
+
+  // ---------------------------------------------------------------- status text (written only when it changes)
+  var lastTxt = {};
+  function setText(id, html) { if (lastTxt[id] !== html) { lastTxt[id] = html; $(id).innerHTML = html; } }
+  function updateTexts() {
+    var c = S.c, on = seizureOn();
+    var st = !c.ok ? "<b>No seizure cycle</b> at this parameter value"
+      : on ? "<b>Seizure ongoing</b>" : "<b>No seizure wave</b> for " + ((S.t - S.lastLm) / 1000).toFixed(1) + " s (at rest)";
+    setText("status", st + " · model time " + ((S.t - S.tStart) / 1000).toFixed(1) + " s" + (S.running ? "" : " · paused"));
+    var f = on && isFinite(S.interval) ? (1000 / S.interval).toFixed(2) + " Hz" : "–";
+    setText("freq", "Measured seizure frequency: <b>" + f + "</b> (spacing of the last two landmarks of the noise-free EEG)" +
+      (c.ok ? "; stored cycle " + c.f0.toFixed(2) + " Hz." : "."));
+    var ti;
+    if (!S.trk) ti = "Tracker: off (no seizure cycle to set f0 from).";
+    else {
+      var tr = S.trk;
+      ti = "Tracker: " + tr.freqs.length + " oscillators at " + tr.freqs[0].toFixed(2) + " Hz and its harmonics; gains from " + tr.riccatiIters +
+        " Riccati iterations" + (tr.riccatiConverged ? "" : " (NOT converged)") + ". ";
+      if (S.trkMode === "settle") ti += "Settling (" + Math.max(0, (1500 - (S.t - S.trkT0)) / 1000).toFixed(1) + " s) before calibrating its phase offset.";
+      else if (S.trkMode === "calib") ti += "Calibrating the phase offset against the true phase: " + (S.cal.tp.length / 1000).toFixed(1) + " of 4.0 s collected" + (seizureOn() ? "." : " (paused: no seizure wave).");
+      else ti += "Calibrated: offset " + (S.calInfo.offset * DEG).toFixed(0) + "°, phase error SD on the calibration record " + S.calInfo.errSdDeg.toFixed(1) + "°, uncertainty scale " + S.calInfo.sdScale.toFixed(2) + ".";
+    }
+    setText("trkInfo", ti);
+    var am = "";
+    if (S.arm) am = "Armed: waiting for the " + (S.arm.source === "true" ? "true" : "tracked") + " phase to cross " + S.arm.target + "°" + (S.arm.repeat ? " (repeat; pulses this seizure: " + S.nSeizure + ")" : "") + (S.arm.note ? " — " + S.arm.note : "") + ".";
+    else if (S.agn) am = "Phase-agnostic pulse scheduled in " + Math.max(0, S.agn.tFire - S.t) + " ms.";
+    if (S.msgText && performance.now() - S.msgT < 6000) am = (am ? am + " " : "") + S.msgText;
+    setText("armMsg", am);
+    var p = lastPulse(); if (p && !p.result) updateResult();
+  }
+
+  // ---------------------------------------------------------------- main loop
+  var lastTs = null, acc = 0, lastTextT = 0;
+  function frame(ts) {
+    if (lastTs === null) lastTs = ts;
+    var dt = Math.min(ts - lastTs, 100); lastTs = ts;
+    if (S.running) { acc += dt * S.speed; var n = Math.min(Math.floor(acc), 400); acc -= Math.floor(acc); for (var k = 0; k < n; k++) tick(); }
+    drawEEG(); drawDial(); drawPlane(); drawMap();
+    if (ts - lastTextT > 120) { lastTextT = ts; updateTexts(); }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------------------------------------------------------------- switching model, presets
+  function switchModel(name) {
+    S.name = name; $(name === "epileptor" ? "m-epi" : "m-nm").checked = true;
+    fullReset(); buildParamUI(); buildAmpUI(); rebuildTable(); updateResult();
+  }
+  function applyPreset(P) {
+    S.name = P.model; $(P.model === "epileptor" ? "m-epi" : "m-nm").checked = true;
+    S.par[P.model] = Object.assign({}, P.par); S.kind = P.kind; $(P.kind === "biphasic" ? "k-bi" : "k-mono").checked = true;
+    S.snr = P.snr || 30; $("snr").value = String(S.snr);
+    S.source = P.source || "true"; $(S.source === "true" ? "s-true" : "s-trk").checked = true;
+    S.repeat = false; $("repeat").checked = false; S.agn = null; S.pulses = []; S.pulse = null;
+    S.ws = SC.rk4Work(M().n); applyParams(); setupChar(); onCycle();
+    buildParamUI(); S.amp[P.model] = P.amp; buildAmpUI(); rebuildTable();
+    setTarget(P.target); arm(); msg("Preset: " + P.title + ".");
+  }
+
+  // ---------------------------------------------------------------- wiring
+  function init() {
+    colors(); resizeAll();
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", colors);
+    if (window.ResizeObserver) new ResizeObserver(resizeAll).observe(document.body); else window.addEventListener("resize", resizeAll);
+    document.querySelectorAll('input[name=model]').forEach(function (r) { r.addEventListener("change", function () { switchModel(r.value); }); });
+    $("pause").addEventListener("click", function () { S.running = !S.running; this.textContent = S.running ? "Pause" : "Resume"; this.setAttribute("aria-pressed", !S.running); });
+    $("reset").addEventListener("click", function () { fullReset(); updateResult(); });
+    $("speed").addEventListener("change", function () { S.speed = +this.value; });
+    $("snr").addEventListener("change", function () { S.snr = this.value === "Infinity" ? Infinity : +this.value; setupChar(); });
+    document.querySelectorAll('input[name=kind]').forEach(function (r) { r.addEventListener("change", function () { S.kind = r.value; applyParams(); buildAmpUI(); }); });
+    $("amp").addEventListener("input", function () { S.amp[S.name] = +this.value; showAmp(); });
+    $("fireNow").addEventListener("click", function () { S.manual = true; });
+    $("target").addEventListener("change", function () { setTarget(+this.value || 0); });
+    document.querySelectorAll('input[name=src]').forEach(function (r) { r.addEventListener("change", function () { S.source = r.value; if (S.arm) { S.arm.source = r.value; S.prevPh = NaN; } }); });
+    $("arm").addEventListener("click", function () { if (S.arm) { S.arm = null; setArmUI(); } else arm(); });
+    $("repeat").addEventListener("change", function () { S.repeat = this.checked; if (S.arm) S.arm.repeat = this.checked; });
+    $("agnostic").addEventListener("click", function () {
+      if (!S.c.ok) { msg("No seizure cycle: nothing to time against."); return; }
+      S.agn = { tFire: S.t + 1 + Math.floor(S.rng() * S.c.T) };
+    });
+    $("startSz").addEventListener("click", startSeizure);
+    $("clearHist").addEventListener("click", function () { S.hist[S.name] = []; rebuildTable(); });
+    window.addEventListener("keydown", function (ev) {
+      if (ev.key !== " " && ev.code !== "Space") return;
+      var t = ev.target, tag = t && t.tagName;
+      if (tag === "BUTTON" || tag === "SELECT" || tag === "TEXTAREA" || (tag === "INPUT" && t.type !== "range" && t.type !== "radio" && t.type !== "checkbox")) return;
+      ev.preventDefault(); S.manual = true;
+    });
+    // dial: pointer and keyboard
+    var dial = $("dial"), dragging = false;
+    function fromPointer(ev) {
+      var r = dial.getBoundingClientRect(), x = ev.clientX - r.left - r.width / 2, y = ev.clientY - r.top - r.height / 2;
+      setTarget(SC.wrap2pi(Math.atan2(y, x) + Math.PI / 2) * DEG);
+    }
+    dial.addEventListener("pointerdown", function (ev) { dragging = true; dial.setPointerCapture(ev.pointerId); fromPointer(ev); });
+    dial.addEventListener("pointermove", function (ev) { if (dragging) fromPointer(ev); });
+    dial.addEventListener("pointerup", function () { dragging = false; });
+    dial.addEventListener("keydown", function (ev) {
+      var d = ev.shiftKey ? 10 : 1;
+      if (ev.key === "ArrowRight" || ev.key === "ArrowUp") { setTarget(S.target + d); ev.preventDefault(); }
+      else if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") { setTarget(S.target - d); ev.preventDefault(); }
+      else if (ev.key === "PageUp") { setTarget(S.target + 30); ev.preventDefault(); }
+      else if (ev.key === "PageDown") { setTarget(S.target - 30); ev.preventDefault(); }
+    });
+    var ph = $("presets");
+    PRESETS.forEach(function (P) {
+      var b = document.createElement("button"); b.innerHTML = P.title + "<span>" + P.text + "</span>";
+      b.addEventListener("click", function () { applyPreset(P); }); ph.appendChild(b);
+    });
+    S.trail = [];
+    switchModel("epileptor"); setTarget(90);
+    window.__sim = { S: S, SC: SC, tick: tick, applyPreset: applyPreset, PRESETS: PRESETS, switchModel: switchModel };
+    requestAnimationFrame(frame);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
