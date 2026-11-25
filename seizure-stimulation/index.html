@@ -67,7 +67,7 @@ input[type=range] { width: 100%; accent-color: var(--ink); margin: 2px 0; }
 @media (max-width: 600px) { #eeg { height: 250px; } }
 canvas { display: block; width: 100%; }
 #dial { touch-action: none; cursor: pointer; }
-.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.trio { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (max-width: 760px) { .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } .trio .fig:nth-child(2) { grid-column: 1 / -1; order: -1; } }
 @media (max-width: 330px) { .trio { grid-template-columns: minmax(0, 1fr); } .trio .fig:nth-child(2) { grid-column: auto; } }
 .trio canvas { aspect-ratio: 1 / 1; }
@@ -135,6 +135,8 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
 .timed > summary { cursor: pointer; color: var(--trk); padding: 4px 0; }
 .timed[open] > summary { margin-bottom: 6px; }
 @media (min-width: 601px) { .timed[open] > summary { display: none; } }
+[hidden] { display: none !important; }
+.opts { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; font-size: 12.5px; }
 .fab { display: none; }
 @media (max-width: 600px) {
   /* phones: the trace comes first and the floating button stimulates; the settings follow */
@@ -233,7 +235,13 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
     <div class="fig">
       <div class="cap"><span class="key"><span class="sw" style="border-color:var(--truth)"></span>seizure cycle</span><span class="key"><span class="sw dot" style="background:var(--ink)"></span>state</span><span class="key"><span class="sw" style="border-color:var(--stim)"></span>after a pulse</span></div>
       <canvas id="plane" aria-label="Phase plane of the model"></canvas>
+      <div class="opts">
+        <label class="check" for="showFan"><input type="checkbox" id="showFan" checked>Where pulses lead</label>
+        <label class="check" for="showFlow" id="flowLab"><input type="checkbox" id="showFlow" checked>Flow and separatrix</label>
+        <label class="check" for="zoomPlane" id="zoomLab"><input type="checkbox" id="zoomPlane" checked>Zoom on the loop</label>
+      </div>
       <p class="def" id="planeNote"></p>
+      <p class="def" id="planeExtra"></p>
     </div>
     <div class="fig">
       <div class="cap"><span class="key"><span class="sw dot" style="background:var(--ok)"></span>terminated</span><span class="key"><span class="sw dot" style="background:var(--bad)"></span>not</span><span>filled: biphasic, ring: monophasic</span></div>
@@ -324,7 +332,7 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
       <dl>
         <dt>EEG, last 5 s</dt><dd>Top lane: the EEG as measured, with noise. Middle lane: the noise-free EEG, with a tick at each landmark. Bottom lane: the phase, true in grey and tracked in blue, with the target dashed. An orange line marks each pulse; the shaded 15 ms after it is ignored by the tracker, as a stimulation artifact would be.</dd>
         <dt>Dial</dt><dd>Grey hand: true phase. Blue hand: tracked phase, with an arc for its uncertainty. Orange marker: the target.</dd>
-        <dt>Phase plane</dt><dd>Two of the model's variables plotted against each other. The closed loop is the seizure and the open circle is rest. The dot is the model now. The orange path is the 1.2 s after the latest pulse, starting at the ring, and it ends in a green dot if the seizure terminated or a red one if not. Earlier pulses fade quickly.</dd>
+        <dt>Phase plane</dt><dd>Two of the model's variables plotted against each other. The closed loop is the seizure and the open circle is rest. The dot is the model now. The orange path is the 1.2 s after the latest pulse, starting at the ring, and it ends in a green dot if the seizure terminated or a red one if not. Earlier pulses fade quickly. <b>Where pulses lead</b> tries a pulse of the current size from 36 points around the loop. Green means it ends at rest, red that the seizure returns, and the thick line is the path for your target phase. The neural mass shows every path. The Epileptor shows a ring where each pulse starts and a dot where it leaves the model. For the Epileptor, <b>Flow and separatrix</b> adds arrows for the direction of motion and the dashed boundary that divides the green dots from the red.</dd>
         <dt>Outcome map</dt><dd>Every pulse you have delivered: angle is its phase, distance from the centre is its amplitude, green means terminated. Keep going and the pattern of what works appears.</dd>
         <dt>Pulses table</dt><dd>One row per pulse. R<sub>supp</sub> is how much smaller the EEG became: 1 means no change, large values mean the seizure was suppressed.</dd>
       </dl>
@@ -852,7 +860,7 @@ var SCcore = (function () {
     par: { epileptor: { z: 3.5 }, neural_mass: { p: 320, B: 60 } },
     amp: { epileptor: 20.88, neural_mass: 3.2 }, kind: "biphasic",
     charCache: {}, rng: SC.mulberry32(20261112), snr: 30, noiseSd: 0, speed: 1, running: true,
-    target: 45, source: "true", repeat: false,
+    target: 45, source: "true", repeat: false, showFan: true, showFlow: true, zoom: true,
     clean: new Float32Array(NBUF), noisy: new Float32Array(NBUF), tph: new Float32Array(NBUF), kph: new Float32Array(NBUF),
     ksd: new Float32Array(NBUF), lms: [], pulses: [], hist: { epileptor: [], neural_mass: [] }, nPulse: 0
   };
@@ -885,6 +893,7 @@ var SCcore = (function () {
       S.lcPlane = null;
     }
     S.restPlane = c.fpX ? M().plane(c.fpX) : null;
+    if (S.name === "epileptor" && c.ok) { var sx2 = 0; c.lcX.forEach(function (x) { sx2 += x[3]; }); S.x2bar = sx2 / c.lcX.length; S.sepKey = null; }
     setupPlaneBounds();
     buildTracker();
   }
@@ -895,6 +904,14 @@ var SCcore = (function () {
     S.trkMode = "settle"; S.trkT0 = S.t; S.cal = { tp: [], raw: [], nu: [] }; S.calInfo = null;
   }
   function setupPlaneBounds() {
+    if (S.name === "epileptor" && S.zoom && S.lcPlane) {
+      // the Epileptor's resting point lies far below its loop: frame the loop, the saddle and the reach of a pulse instead
+      var cx0 = Infinity, cx1 = -Infinity, cy0 = Infinity, cy1 = -Infinity;
+      S.lcPlane.forEach(function (q) { cx0 = Math.min(cx0, q[0]); cx1 = Math.max(cx1, q[0]); cy0 = Math.min(cy0, q[1]); cy1 = Math.max(cy1, q[1]); });
+      var zx = (cx1 - cx0) || 1, zy = (cy1 - cy0) || 1;
+      S.pb = { x0: cx0 - 1.6 * zx, x1: cx1 + 0.65 * zx, y0: cy0 - 1.0 * zy, y1: cy1 + 0.2 * zy };
+      return;
+    }
     var pts = (S.lcPlane || []).slice(); if (S.restPlane) pts.push(S.restPlane);
     if (!pts.length) pts = [M().plane(S.X || M().seizureIC())];
     var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -1066,6 +1083,7 @@ var SCcore = (function () {
     });
     host.appendChild(b);
     $("planeNote").textContent = info.planeNote;
+    planeOpts();
     updateRegime();
   }
   function updateRegime() {
@@ -1128,6 +1146,171 @@ var SCcore = (function () {
     el.className = "result " + (r.terminated ? "ok" : "bad");
     el.textContent = head + " → " + (r.terminated ? "terminated in " + r.tTerm.toFixed(2) + " s" : "not terminated") +
       "; R_supp early " + fmtR(r.rsupp) + ", late " + fmtR(r.rsuppLate) + (p.contaminated ? " (another pulse followed within 2 s)" : "");
+  }
+
+  // ---------------------------------------------------------------- phase-plane extras
+  // Pulse paths: from NFAN points around the stored cycle, the first FAN_MS of the response to a pulse of the current
+  // amplitude and kind, and whether the seizure then terminates (same 2-s rule as for a delivered pulse).
+  var NFAN = 36, FAN_MS = 40;
+  function fanKey() { return charKey() + "|" + S.kind + "|" + S.amp[S.name]; }
+  function computeFan() {
+    var c = S.c, m = M(), amp = S.amp[S.name], ws = SC.rk4Work(m.n), nT = Math.ceil(c.T), out = [];
+    for (var k = 0; k < NFAN; k++) {
+      var j = Math.min(Math.round(k / NFAN * c.T), c.lcX.length - 1), X = Float64Array.from(c.lcX[j]);
+      var pth = [m.plane(X)], lo = Infinity, hi = -Infinity, land = null, np = SC.pulseSamples(m), epi = m.name === "epileptor";
+      for (var t = 0; t < SC.T_POST; t++) {
+        var e = SC.step(m, X, amp, t, ws);
+        if (t < FAN_MS) pth.push(m.plane(X));
+        if (epi && !land && t + 1 >= np && t < 80 && X[0] < 0) land = m.plane(X);
+        if (t >= SC.T_POST - nT) { if (e < lo) lo = e; if (e > hi) hi = e; }
+      }
+      out.push({ ph: j / c.T, path: pth, land: land, term: hi - lo < SC.TERM_FRAC * c.lcP2p });
+    }
+    return out;
+  }
+  function updateFan(now) {
+    if (!S.c.ok || S.charCache[charKey()] !== S.c) return;       // wait until the characterisation matches the sliders
+    var key = fanKey();
+    if (key === S.fanKey) return;
+    if (key !== S.fanWant) { S.fanWant = key; S.fanWantT = now; if (S.fan && S.fanChar === S.c) return; }
+    if (now - S.fanWantT < 160 && S.fan && S.fanChar === S.c) return;   // let the slider settle before recomputing
+    S.fan = computeFan(); S.fanKey = key; S.fanChar = S.c;
+  }
+  function arrowHead(ctx, x0, y0, x1, y1, sz) {
+    var a = Math.atan2(y1 - y0, x1 - x0);
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - sz * Math.cos(a - 0.45), y1 - sz * Math.sin(a - 0.45)); ctx.lineTo(x1 - sz * Math.cos(a + 0.45), y1 - sz * Math.sin(a + 0.45));
+    ctx.closePath(); ctx.fill();
+  }
+  // The Epileptor's fast subsystem in the (x1, y1) plane, as in Epileptor.rhs without the time scale and the pulse.
+  // For x1 < 0 it depends on x1 and y1 only; for x1 >= 0 it also depends on x2.
+  function epiField(x, y, x2, z) {
+    var p = S.models.epileptor.p, f1 = x < 0 ? (p.b - p.a * x) * x : p.slope - x2 + 0.6 * (z - 4) * (z - 4);
+    return [y - z + p.Iext + f1 * x, p.c - p.d * x * x - y];
+  }
+  // Fixed points on the x1 < 0 branch: roots of a x^3 + (d - b) x^2 + (z - Iext - c) = 0. The lower one is rest, the higher the saddle.
+  function epiSaddle(z) {
+    var p = S.models.epileptor.p, h = function (x) { return p.a * x * x * x + (p.d - p.b) * x * x + (z - p.Iext - p.c); };
+    var roots = [], xp = -4, hp = h(xp);
+    for (var n = 1; n <= 400; n++) {
+      var x = -4 + n * 0.01, hx = h(x);
+      if ((hx > 0) !== (hp > 0)) {
+        var lo = xp, hi = x;
+        for (var i = 0; i < 40; i++) { var mid = 0.5 * (lo + hi); if ((h(mid) > 0) === (hp > 0)) lo = mid; else hi = mid; }
+        roots.push(0.5 * (lo + hi));
+      }
+      xp = x; hp = hx;
+    }
+    if (roots.length < 2) return null;
+    var xs = roots[roots.length - 1];
+    return [xs, p.c - p.d * xs * xs];
+  }
+  // Separatrix of the plane: the saddle's stable manifold, followed backwards in time from the saddle along its stable
+  // direction (RK4). Each point carries a flag: true once the curve has entered x1 >= 0, where it depends on x2.
+  function epiSeparatrix(sad, x2, z, b) {
+    var p = S.models.epileptor.p, xs = sad[0], J11 = 2 * p.b * xs - 3 * p.a * xs * xs, J21 = -2 * p.d * xs;
+    var tr = J11 - 1, det = -J11 - J21, disc = tr * tr - 4 * det;
+    if (!(det < 0) || !(disc > 0)) return null;
+    var lam = 0.5 * (tr - Math.sqrt(disc)), v = [1, lam - J11], vn = Math.hypot(v[0], v[1]), out = [];
+    [1, -1].forEach(function (sg) {
+      var q = [sad[0] + sg * 1e-3 * v[0] / vn, sad[1] + sg * 1e-3 * v[1] / vn], pts = [[sad[0], sad[1], false]], approx = false;
+      for (var n = 0; n < 4000; n++) {
+        var k1 = epiField(q[0], q[1], x2, z), h = -Math.min(0.01, 0.03 / (Math.hypot(k1[0], k1[1]) + 1e-9));
+        var k2 = epiField(q[0] + 0.5 * h * k1[0], q[1] + 0.5 * h * k1[1], x2, z);
+        var k3 = epiField(q[0] + 0.5 * h * k2[0], q[1] + 0.5 * h * k2[1], x2, z);
+        var k4 = epiField(q[0] + h * k3[0], q[1] + h * k3[1], x2, z);
+        q = [q[0] + h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]), q[1] + h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])];
+        if (q[0] >= 0) break;
+        if (n % 2 === 0) pts.push([q[0], q[1], approx]);
+        if (q[0] < b.x0 - 1 || q[0] > b.x1 + 1 || q[1] < b.y0 - 3 || q[1] > b.y1 + 3) break;
+      }
+      out.push(pts);
+    });
+    return out;
+  }
+  function drawEpiFlow(ctx, X, Y, b, C) {
+    // x2 only enters for x1 >= 0; it is held at its mean over the stored seizure cycle, so the picture does not move
+    var x2 = S.x2bar || 0, z = S.par.epileptor.z, nx = 15, ny = 15, sx = Math.abs(X(1) - X(0)), sy = Math.abs(Y(1) - Y(0)), arr = [], sp = [], i, j;
+    for (i = 0; i < nx; i++) for (j = 0; j < ny; j++) {
+      var gx = b.x0 + (i + 0.5) / nx * (b.x1 - b.x0), gy = b.y0 + (j + 0.5) / ny * (b.y1 - b.y0), f = epiField(gx, gy, x2, z);
+      var vx = f[0] * sx, vy = -f[1] * sy, sv = Math.hypot(vx, vy);
+      arr.push([gx, gy, vx, vy, sv]); sp.push(sv);
+    }
+    sp.sort(function (u, w) { return u - w; }); var s0 = sp[sp.length >> 1] || 1;
+    ctx.strokeStyle = C.faint; ctx.fillStyle = C.faint; ctx.lineWidth = 1;
+    arr.forEach(function (a) {       // direction as it appears on screen; length grows with speed up to a ceiling
+      if (!(a[4] > 0)) return;
+      var L = 4 + 9 * (1 - Math.exp(-a[4] / s0)), ux = a[2] / a[4], uy = a[3] / a[4], px = X(a[0]), py = Y(a[1]);
+      ctx.globalAlpha = a[0] < 0 ? 1 : 0.4;     // fainter where the arrows are an average rather than exact
+      ctx.beginPath(); ctx.moveTo(px - 0.5 * L * ux, py - 0.5 * L * uy); ctx.lineTo(px + 0.5 * L * ux, py + 0.5 * L * uy); ctx.stroke();
+      arrowHead(ctx, px, py, px + 0.5 * L * ux, py + 0.5 * L * uy, 3.2);
+    });
+    ctx.globalAlpha = 1;
+    var sad = epiSaddle(z);
+    if (!sad) return;
+    var key = z + "|" + b.x0 + "|" + b.x1 + "|" + b.y0 + "|" + b.y1;
+    if (S.sepKey !== key) { S.sep = epiSeparatrix(sad, x2, z, b); S.sepKey = key; }
+    var inView = function (q) { return q[0] >= b.x0 && q[0] <= b.x1 && q[1] >= b.y0 && q[1] <= b.y1; };
+    if (S.sep) {
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.8; ctx.setLineDash([7, 4]);
+      S.sep.forEach(function (pts) { ctx.beginPath(); pts.forEach(function (q, n) { if (n) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); }); ctx.stroke(); });
+      ctx.setLineDash([]);
+      // name the line where its left branch meets the edge of the view
+      var left = S.sep[0][S.sep[0].length - 1][0] < S.sep[1][S.sep[1].length - 1][0] ? S.sep[0] : S.sep[1], lp = null;
+      left.forEach(function (q) { if (inView(q) && (!lp || q[0] < lp[0])) lp = q; });
+      if (lp) {
+        var lx = Math.max(X(lp[0]), X(b.x0)) + 5, ly = Math.max(Y(lp[1]) - 11, Y(b.y1) + 9);
+        ctx.fillStyle = C.ink; ctx.font = "600 11px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText("separatrix", lx, ly);
+      }
+    }
+    var qx = X(sad[0]), qy = Y(sad[1]);
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(qx - 4.5, qy - 4.5); ctx.lineTo(qx + 4.5, qy + 4.5); ctx.moveTo(qx - 4.5, qy + 4.5); ctx.lineTo(qx + 4.5, qy - 4.5); ctx.stroke();
+    ctx.fillStyle = C.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText("saddle", qx - 9, qy + 10);
+  }
+  function drawFan(ctx, X, Y, C) {
+    var stale = S.fanKey !== fanKey(), tg = S.target / 360, best = 0, bd = 9, np = SC.pulseSamples(M());
+    S.fan.forEach(function (f, k) { var d = Math.abs(f.ph - tg); d = Math.min(d, 1 - d); if (d < bd) { bd = d; best = k; } });
+    function one(f, hot) {
+      ctx.strokeStyle = ctx.fillStyle = f.term ? C.ok : C.bad;
+      ctx.globalAlpha = (hot ? 1 : f.term ? 0.6 : 0.3) * (stale ? 0.4 : 1); ctx.lineWidth = hot ? 2.4 : 1;
+      var ga = ctx.globalAlpha, j0 = Math.min(np, f.path.length - 1);
+      ctx.globalAlpha = ga * 0.4; ctx.beginPath();
+      for (var i = 0; i <= j0; i++) { if (i) ctx.lineTo(X(f.path[i][0]), Y(f.path[i][1])); else ctx.moveTo(X(f.path[i][0]), Y(f.path[i][1])); }
+      ctx.stroke();
+      ctx.globalAlpha = ga; ctx.beginPath();
+      for (i = j0; i < f.path.length; i++) { if (i > j0) ctx.lineTo(X(f.path[i][0]), Y(f.path[i][1])); else ctx.moveTo(X(f.path[i][0]), Y(f.path[i][1])); }
+      ctx.stroke();
+      var n = f.path.length - 1, e = f.path[n], a = f.path[n - 1];
+      for (var j = n - 1; j > 0 && Math.hypot(X(e[0]) - X(a[0]), Y(e[1]) - Y(a[1])) < 3; j--) a = f.path[j - 1];
+      arrowHead(ctx, X(a[0]), Y(a[1]), X(e[0]), Y(e[1]), hot ? 7.5 : 4.5);
+      if (hot) { ctx.beginPath(); ctx.arc(X(f.path[0][0]), Y(f.path[0][1]), 3.5, 0, TAU); ctx.fill(); }
+    }
+    if (S.name === "epileptor") {
+      var fade = stale ? 0.4 : 1;
+      S.fan.forEach(function (f) {
+        ctx.strokeStyle = ctx.fillStyle = f.term ? C.ok : C.bad;
+        ctx.globalAlpha = 0.85 * fade; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(X(f.path[0][0]), Y(f.path[0][1]), 2.6, 0, TAU); ctx.stroke();
+        if (f.land) { ctx.globalAlpha = 0.9 * fade; ctx.beginPath(); ctx.arc(X(f.land[0]), Y(f.land[1]), 3.3, 0, TAU); ctx.fill(); }
+      });
+      var fb = S.fan[best]; one(fb, true);
+      if (fb.land) { ctx.globalAlpha = fade; ctx.fillStyle = fb.term ? C.ok : C.bad; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(X(fb.land[0]), Y(fb.land[1]), 5, 0, TAU); ctx.fill(); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+      return;
+    }
+    S.fan.forEach(function (f, k) { if (k !== best) one(f, false); });
+    one(S.fan[best], true);
+    ctx.globalAlpha = 1;
+  }
+  function planeOpts() {
+    var epi = S.name === "epileptor", t = "";
+    $("flowLab").hidden = !epi; $("zoomLab").hidden = !epi;
+    if (S.showFan && epi) t += "Where pulses lead: a pulse of the current size is tried from " + NFAN + " points around the loop. A ring marks where each one starts and a dot where it leaves the model, once the pulse is over and x1 is negative again. Green ends at rest, red returns to the seizure. The thick line is the full path for your target phase. ";
+    if (S.showFan && !epi) t += "Where pulses lead: the first " + FAN_MS + " ms after a pulse of the current size, from " + NFAN + " points around the loop. Green paths end at rest, red ones return to the seizure; the thick one is nearest your target phase. ";
+    if (epi && S.showFlow) t += "Grey arrows: the direction in which the model moves. Dashed line: the separatrix, which passes through the saddle (×). A state above it returns to the seizure and one below it goes to rest, so it divides the red dots from the green. Right of x1 = 0 the arrows are fainter because the motion there also depends on a third variable (x2), taken at its average over the seizure. ";
+    if (!epi) t += "No flow field is drawn for this model: the plane is a view of ten variables, so the direction of flow at a point is not fixed by the two shown.";
+    $("planeExtra").textContent = t;
   }
 
   // ---------------------------------------------------------------- drawing
@@ -1254,8 +1437,11 @@ var SCcore = (function () {
     ctx.clearRect(0, 0, w, h);
     var X = function (v) { return pad + (v - b.x0) / (b.x1 - b.x0) * (w - pad - 8); };
     var Y = function (v) { return h - pad - (v - b.y0) / (b.y1 - b.y0) * (h - pad - 8); };
+    var clampPt = function (q) { return [Math.min(Math.max(q[0], b.x0), b.x1), Math.min(Math.max(q[1], b.y0), b.y1)]; };
     ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.strokeRect(pad + 0.5, 8.5, w - pad - 8, h - pad - 8);
     ctx.save(); ctx.beginPath(); ctx.rect(pad, 8, w - pad - 8, h - pad - 8); ctx.clip();
+    if (S.name === "epileptor" && S.showFlow && S.X) drawEpiFlow(ctx, X, Y, b, C);
+    if (S.showFan) { updateFan(performance.now()); if (S.fan && S.fanChar === S.c && S.c.ok) drawFan(ctx, X, Y, C); }
     if (S.lcPlane) {
       ctx.strokeStyle = C.truth; ctx.lineWidth = 2; ctx.beginPath();
       S.lcPlane.forEach(function (q, k) { if (k) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
@@ -1271,7 +1457,7 @@ var SCcore = (function () {
       p.trail.forEach(function (q, j) { if (j) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
       ctx.stroke();
       var q0p = p.trail[0]; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(q0p[0]), Y(q0p[1]), 5, 0, TAU); ctx.stroke();   // state at pulse onset
-      if (p.result && !p.result.na) { var q = p.trail[p.trail.length - 1]; ctx.fillStyle = p.result.terminated ? C.ok : C.bad; ctx.beginPath(); ctx.arc(X(q[0]), Y(q[1]), 4, 0, TAU); ctx.fill(); }
+      if (p.result && !p.result.na) { var q = clampPt(p.trail[p.trail.length - 1]); ctx.fillStyle = p.result.terminated ? C.ok : C.bad; ctx.beginPath(); ctx.arc(X(q[0]), Y(q[1]), 4, 0, TAU); ctx.fill(); }
       ctx.globalAlpha = 1;
     });
     if (S.trail && S.trail.length > 1) {   // the last 0.4 s of the state, fading towards its tail
@@ -1287,11 +1473,15 @@ var SCcore = (function () {
       ctx.globalAlpha = 1;
     }
     if (S.restPlane) {
-      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(S.restPlane[0]), Y(S.restPlane[1]), 5, 0, TAU); ctx.stroke();
+      var rp = clampPt(S.restPlane), off = rp[1] !== S.restPlane[1] || rp[0] !== S.restPlane[0];
       ctx.fillStyle = C.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      ctx.fillText("rest", X(S.restPlane[0]) + 8, Y(S.restPlane[1]));
+      if (off) ctx.fillText("rest ↓ (below this view)", X(rp[0]) + 8, Y(rp[1]) - 8);
+      else {
+        ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(rp[0]), Y(rp[1]), 5, 0, TAU); ctx.stroke();
+        ctx.fillText("rest", X(rp[0]) + 8, Y(rp[1]));
+      }
     }
-    var q0 = M().plane(S.X); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(X(q0[0]), Y(q0[1]), 4, 0, TAU); ctx.fill();
+    var q0 = clampPt(M().plane(S.X)); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(X(q0[0]), Y(q0[1]), 4, 0, TAU); ctx.fill();
     ctx.restore();
     ctx.fillStyle = C.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     var lab = S.name === "epileptor" ? ["x1", "y1"] : ["EEG (mV)", "y0 (mV)"];
@@ -1409,6 +1599,9 @@ var SCcore = (function () {
     });
     $("startSz").addEventListener("click", startSeizure);
     $("clearHist").addEventListener("click", function () { S.hist[S.name] = []; rebuildTable(); });
+    $("showFan").addEventListener("change", function () { S.showFan = this.checked; planeOpts(); });
+    $("showFlow").addEventListener("change", function () { S.showFlow = this.checked; planeOpts(); });
+    $("zoomPlane").addEventListener("change", function () { S.zoom = this.checked; setupPlaneBounds(); });
     window.addEventListener("keydown", function (ev) {
       if (ev.key !== " " && ev.code !== "Space") return;
       var t = ev.target, tag = t && t.tagName;
