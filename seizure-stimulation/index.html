@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Phase-locked stimulation</title>
+<title>Phase-locked seizure stimulation</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='13' fill='%231c2733'/><path d='M36 7V57' stroke='%23f2804f' stroke-width='5.5' stroke-linecap='round'/><path d='M4 32Q8 -6 12 32T20 32T28 32T36 32H60' fill='none' stroke='white' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <meta name="description" content="Two published seizure models run in the browser; deliver one stimulation pulse at a chosen phase of the seizure wave and see whether the seizure stops.">
 <style>
 :root {
@@ -13,17 +14,23 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #141413; --ink: #ebeae4; --muted: #b3b2aa; --faint: #7a7972; --grid: #2a2a27; --panel: #1c1c1a;
     --border: #3a3a35; --truth: #a6a49c; --trk: #5d9eec; --stim: #f2804f; --ok: #3cb43c; --bad: #f36563;
     --trk-soft: rgba(93, 158, 236, 0.25); --stim-soft: rgba(242, 128, 79, 0.28);
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #141413; --ink: #ebeae4; --muted: #b3b2aa; --faint: #7a7972; --grid: #2a2a27; --panel: #1c1c1a;
+  --border: #3a3a35; --truth: #a6a49c; --trk: #5d9eec; --stim: #f2804f; --ok: #3cb43c; --bad: #f36563;
+  --trk-soft: rgba(93, 158, 236, 0.25); --stim-soft: rgba(242, 128, 79, 0.28);
+  color-scheme: dark;
+}
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-.wrap { max-width: 1280px; margin: 0 auto; padding: 16px; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 h1 { font-size: 20px; font-weight: 600; margin: 4px 0 6px; letter-spacing: -0.01em; }
 h2 { font-size: 13px; font-weight: 600; margin: 0 0 8px; text-transform: none; color: var(--ink); }
 p { margin: 0 0 8px; }
@@ -31,7 +38,7 @@ p { margin: 0 0 8px; }
 .small { font-size: 12.5px; color: var(--muted); }
 .def { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
 .def b { color: var(--ink); font-weight: 600; }
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 12px 0 14px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 10px 0; border-bottom: 1px solid var(--border); margin: 0 0 8px; }
 .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label { padding: 5px 12px; cursor: pointer; user-select: none; color: var(--muted); }
@@ -58,10 +65,11 @@ input[type=range] { width: 100%; accent-color: var(--ink); margin: 2px 0; }
 .sw.dot { width: 8px; height: 8px; border: 0; border-radius: 50%; }
 #eeg { height: 300px; }
 @media (max-width: 600px) { #eeg { height: 250px; } }
-canvas { display: block; width: 100%; touch-action: none; }
+canvas { display: block; width: 100%; }
+#dial { touch-action: none; cursor: pointer; }
 .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-@media (max-width: 760px) { .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 330px) { .trio { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } .trio .fig:nth-child(2) { grid-column: 1 / -1; order: -1; } }
+@media (max-width: 330px) { .trio { grid-template-columns: minmax(0, 1fr); } .trio .fig:nth-child(2) { grid-column: auto; } }
 .trio canvas { aspect-ratio: 1 / 1; }
 .result { padding: 8px 10px; border-left: 3px solid var(--border); background: var(--panel); margin: 2px 0 14px; min-height: 2.6em; font-variant-numeric: tabular-nums; }
 .result.ok { border-left-color: var(--ok); } .result.bad { border-left-color: var(--bad); } .result.wait { border-left-color: var(--stim); }
@@ -90,28 +98,118 @@ td:nth-child(2), th:nth-child(2), td:nth-child(8), th:nth-child(8) { text-align:
 kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; }
 footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--border); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.headline { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+.guidelink { color: var(--trk); font-size: 13px; white-space: nowrap; }
+.stim { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); padding: 10px 12px; margin: 10px 0 0; }
+.stimrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+button.big { font-size: 15px; padding: 9px 16px; }
+button.primary kbd { border-color: rgba(255, 255, 255, 0.65); color: #fff; margin-left: 6px; }
+.ampbox { flex: 1 1 220px; min-width: 0; max-width: 440px; }
+.ampbox .lab { margin-top: 0; }
+.rowlab { color: var(--muted); }
+.nowrap { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.stim .msg { margin: 0; }
+button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
+#preset { max-width: min(100%, 270px); }
+#presetText { min-height: 1.4em; margin: 0 0 8px; }
+.guide { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border); scroll-margin-top: 8px; }
+.guide > h2 { font-size: 17px; margin-bottom: 12px; }
+.guide h3 { font-size: 13.5px; font-weight: 600; margin: 0 0 6px; }
+.guide p + h3 { margin-top: 14px; }
+.gcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 18px 28px; }
+.gcols > div { min-width: 0; }
+.guide p, .guide li, .guide dd { color: var(--muted); }
+.guide b, .guide dt { color: var(--ink); font-weight: 600; }
+.guide dl { margin: 0; }
+.guide dt { margin-top: 7px; }
+.guide dd { margin: 0; }
+.guide ol { margin: 0; padding-left: 1.3em; }
+.guide li { margin-bottom: 4px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+@media (pointer: coarse) {
+  button, select, input[type=number] { min-height: 40px; }
+  .seg label { display: inline-flex; align-items: center; min-height: 40px; }
+  input[type=range] { height: 30px; }
+}
+.timed > summary { cursor: pointer; color: var(--trk); padding: 4px 0; }
+.timed[open] > summary { margin-bottom: 6px; }
+@media (min-width: 601px) { .timed[open] > summary { display: none; } }
+.fab { display: none; }
+@media (max-width: 600px) {
+  /* phones: the trace comes first and the floating button stimulates; the settings follow */
+  .wrap { display: flex; flex-direction: column; padding-bottom: 84px; }
+  .layout, .layout > main { display: contents; }
+  main > .fig:first-child { order: 1; } .result { order: 2; }
+  .stim { order: 3; margin-top: 0; } .bar { order: 4; margin-top: 10px; } #presetText { order: 5; }
+  .trio { order: 6; } aside { order: 7; } main > h2, main > .def, .tablewrap { order: 8; } .guide { order: 9; } footer { order: 10; }
+  #fireNow, .rowlab { display: none; }
+  .fab { display: block; position: fixed; z-index: 5; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+         font-size: 16px; padding: 12px 22px; border-radius: 26px; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3); }
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header>
-  <h1>Phase-locked stimulation of a simulated seizure</h1>
-  <p class="lede">Two published seizure models (the Epileptor, Jirsa et al. 2014, and the Wendling et al. 2002 neural mass) run live in this page, integrated exactly as in the project's Python code. Deliver one brief pulse at a chosen phase of the seizure wave and see whether the seizure stops. This is a simulation for research, not a clinical tool.</p>
+<header class="top">
+  <div class="headline">
+    <h1>Phase-locked stimulation of a simulated seizure</h1>
+    <a class="guidelink" href="#guide">New here? Read the guide ↓</a>
+  </div>
+  <p class="lede">A model seizure is running below. Press <kbd>Space</kbd> or <b>Stimulate now</b> to deliver one brief pulse, then watch whether the seizure stops. That depends on how strong the pulse is and on where in the seizure wave it lands. This is a simulation for research, not a clinical tool.</p>
 </header>
+
+<section class="stim" aria-label="Stimulation">
+  <div class="stimrow">
+    <button class="primary big" id="fireNow">Stimulate now <kbd>Space</kbd></button>
+    <div class="ampbox">
+      <div class="lab"><label for="amp">Pulse amplitude</label><output id="ampOut" for="amp"></output></div>
+      <input type="range" id="amp">
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Pulse shape">
+      <input type="radio" name="kind" id="k-bi" value="biphasic" checked><label for="k-bi" title="Charge-balanced biphasic: a leading phase, then an equal and opposite phase of the same width, so the net charge is zero">Biphasic</label>
+      <input type="radio" name="kind" id="k-mono" value="monophasic"><label for="k-mono" title="Monophasic: the leading phase only">Monophasic</label>
+    </div>
+    <button id="startSz" title="Put the model back into the seizure after a termination">Start seizure</button>
+  </div>
+  <details class="timed" id="timed" open>
+  <summary>Time the pulse to a phase of the wave</summary>
+  <div class="stimrow">
+    <span class="rowlab">Or time it:</span>
+    <span class="nowrap"><label for="target">target phase</label><input type="number" id="target" min="0" max="359" step="1" value="45"><span>°</span></span>
+    <div class="seg" role="radiogroup" aria-label="Phase used to time the pulse">
+      <input type="radio" name="src" id="s-true" value="true" checked><label for="s-true" title="True phase, from the noise-free EEG: what the experimenter knows">True phase</label>
+      <input type="radio" name="src" id="s-trk" value="tracked"><label for="s-trk" title="Tracked phase, from the noisy EEG: what a device would know. Fires only if its uncertainty is below 40°; otherwise that wave is skipped">Tracked phase</label>
+    </div>
+    <button id="arm" aria-pressed="false">Arm: fire at the next crossing</button>
+    <label class="check" for="repeat" title="Re-arm on every wave until the seizure terminates: at most one pulse per wave, at least two free periods between pulses"><input type="checkbox" id="repeat">Repeat until it stops</label>
+    <button id="agnostic" title="Phase-agnostic pulse: one pulse at a uniformly random time within the next wave">Random-time pulse</button>
+  </div>
+  </details>
+  <p class="msg" id="armMsg" aria-live="polite"></p>
+</section>
+
+<button class="primary fab" id="fireFab" aria-label="Stimulate now">Stimulate</button>
 
 <div class="bar" role="group" aria-label="Model and run controls">
   <div class="seg" role="radiogroup" aria-label="Model">
-    <input type="radio" name="model" id="m-epi" value="epileptor" checked><label for="m-epi">Epileptor</label>
-    <input type="radio" name="model" id="m-nm" value="neural_mass"><label for="m-nm">Neural mass</label>
+    <input type="radio" name="model" id="m-nm" value="neural_mass" checked><label for="m-nm">Neural mass</label>
+    <input type="radio" name="model" id="m-epi" value="epileptor"><label for="m-epi">Epileptor</label>
+  </div>
+  <div class="row" style="margin:0">
+    <label for="preset">Example</label>
+    <select id="preset"><option value="">Choose a worked example…</option></select>
   </div>
   <div class="row" style="margin:0">
     <button id="pause" aria-pressed="false">Pause</button>
-    <button id="reset" title="Restart the model on its seizure cycle (keeps the history)">Reset</button>
+    <button id="step" title="Pause, then advance the model by 5 ms per press">Step 5 ms</button>
+    <button id="reset" title="Restart the model on its seizure cycle (keeps the table of pulses)">Reset</button>
     <label for="speed">Speed</label>
-    <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1× (real time)</option><option value="2">2×</option><option value="4">4×</option></select>
+    <select id="speed"><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1× (real time)</option><option value="2">2×</option><option value="4">4×</option></select>
   </div>
   <div class="status" id="status" aria-live="polite"></div>
 </div>
+<p class="small" id="presetText"></p>
 
 <div class="layout">
 <main>
@@ -124,12 +222,12 @@ footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--border
     </div>
     <canvas id="eeg" aria-label="Scrolling EEG, last 5 seconds"></canvas>
   </div>
-  <div class="result" id="result" aria-live="polite">No pulse delivered yet.</div>
+  <div class="result" id="result" aria-live="polite">No pulse yet. Press Space or Stimulate now to deliver one.</div>
 
   <div class="trio">
     <div class="fig">
       <div class="cap"><span class="key"><span class="sw" style="border-color:var(--truth)"></span>true</span><span class="key"><span class="sw" style="border-color:var(--trk)"></span>tracked ± SD</span><span class="key"><span class="sw" style="border-color:var(--stim)"></span>target</span></div>
-      <canvas id="dial" tabindex="0" role="slider" aria-label="Target phase in degrees; drag or use arrow keys" aria-valuemin="0" aria-valuemax="359" aria-valuenow="90"></canvas>
+      <canvas id="dial" tabindex="0" role="slider" aria-label="Target phase in degrees; drag or use arrow keys" aria-valuemin="0" aria-valuemax="359" aria-valuenow="45"></canvas>
       <p class="def"><b>Phase</b>: position within the current seizure wave, 0° at its landmark (the upward crossing of a fixed level by the noise-free EEG) and 360° one period later. Click or drag the dial to set the target.</p>
     </div>
     <div class="fig">
@@ -140,7 +238,7 @@ footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--border
     <div class="fig">
       <div class="cap"><span class="key"><span class="sw dot" style="background:var(--ok)"></span>terminated</span><span class="key"><span class="sw dot" style="background:var(--bad)"></span>not</span><span>filled: biphasic, ring: monophasic</span></div>
       <canvas id="map" aria-label="Outcomes by phase and amplitude"></canvas>
-      <p class="def">Your pulses so far: angle = true phase at the pulse (0° at top, clockwise), distance from the centre = amplitude. <button id="clearHist" style="padding:1px 7px;font-size:12px">Clear</button></p>
+      <p class="def">Your pulses so far: angle = true phase at the pulse (0° at top, clockwise), distance from the centre = amplitude. <button id="clearHist" style="padding:1px 7px;font-size:12px;min-height:28px">Clear</button></p>
     </div>
   </div>
 
@@ -154,7 +252,7 @@ footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--border
   </div>
 </main>
 
-<aside aria-label="Controls">
+<aside aria-label="Model settings">
   <section class="panel" id="parPanel">
     <h2>Model parameter</h2>
     <div id="parSliders"></div>
@@ -171,34 +269,68 @@ footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--border
   </section>
 
   <section class="panel">
-    <h2>Stimulus</h2>
-    <div class="radio"><input type="radio" name="kind" id="k-bi" value="biphasic" checked><label for="k-bi"><b>Charge-balanced biphasic</b>: a leading phase, then an equal and opposite phase of the same width, so the net charge is zero.</label></div>
-    <div class="radio"><input type="radio" name="kind" id="k-mono" value="monophasic"><label for="k-mono"><b>Monophasic</b>: the leading phase only.</label></div>
-    <div class="lab"><label for="amp">Amplitude</label><output id="ampOut" for="amp"></output></div>
-    <input type="range" id="amp">
-    <p class="small" id="pulseInfo"></p>
-  </section>
-
-  <section class="panel">
-    <h2>Deliver</h2>
-    <div class="row"><button class="primary" id="fireNow">Stimulate now</button><span class="small">or press <kbd>Space</kbd></span></div>
-    <div class="row"><label for="target">Target phase</label><input type="number" id="target" min="0" max="359" step="1" value="90"><span>°</span></div>
-    <div class="radio"><input type="radio" name="src" id="s-true" value="true" checked><label for="s-true">True phase (from the noise-free EEG: what the experimenter knows)</label></div>
-    <div class="radio"><input type="radio" name="src" id="s-trk" value="tracked"><label for="s-trk">Tracked phase (from the noisy EEG: what a device would know). Fires only if its uncertainty is below 40°; otherwise that wave is skipped.</label></div>
-    <div class="row"><button id="arm" aria-pressed="false">Arm: fire at the next crossing</button></div>
-    <div class="radio"><input type="checkbox" id="repeat"><label for="repeat">Repeat: re-arm on every wave until the seizure terminates (at most one pulse per wave, at least two free periods between pulses)</label></div>
-    <div class="row"><button id="agnostic">Phase-agnostic pulse</button><span class="small">at a uniformly random time within the next wave</span></div>
-    <div class="row"><button id="startSz">Start seizure</button><span class="small">after a termination</span></div>
-    <p class="msg" id="armMsg" aria-live="polite"></p>
-  </section>
-
-  <section class="panel presets">
-    <h2>Presets</h2>
-    <div id="presets"></div>
-    <p class="small">Each preset restarts the seizure on the stored cycle, sets the stimulus, uses the true phase at SNR 30 and arms one pulse. Values from the project's characterisation (48 phases × 50 amplitudes).</p>
+    <h2>This pulse</h2>
+    <p class="small" id="pulseInfo" style="margin:0"></p>
   </section>
 </aside>
 </div>
+
+<section class="guide" id="guide" aria-labelledby="guideH">
+  <h2 id="guideH">Guide</h2>
+  <div class="gcols">
+    <div>
+      <h3>What this page is</h3>
+      <p>In these models a seizure is a rhythm the tissue gets stuck in: the same wave, repeating a few times a second. With the same settings the model can also sit quietly at rest. A brief electrical pulse can knock it from the seizure back to rest, but only if the pulse is the right size and arrives at the right moment in the wave. This page lets you test that by hand.</p>
+      <p>Two published models are available. The <b>Neural mass</b> (Wendling et al. 2002), which the page starts on, describes interacting populations of excitatory and inhibitory neurons. The <b>Epileptor</b> (Jirsa et al. 2014) is an abstract model of seizure dynamics.</p>
+      <h3>Try this first</h3>
+      <ol>
+        <li>Watch the top trace for a few seconds. It is the simulated EEG during a seizure.</li>
+        <li>Press <kbd>Space</kbd> a few times, a few seconds apart. Each press delivers one pulse (the orange line). Two seconds later, the line under the trace says whether the seizure terminated. Most presses will fail: with the starting settings, only a pulse that lands in roughly the first third of the wave (0° to 105°) stops the seizure.</li>
+        <li>If it stopped, press <b>Start seizure</b> to bring it back.</li>
+        <li>In the <b>Example</b> menu choose “Neural mass: a phase that terminates”, then “Neural mass: same amplitude, a phase that fails”. The pulse is the same; only its timing differs.</li>
+        <li>Set <b>Speed</b> to 0.1× and run an example again while watching the phase plane. The orange path shows where the pulse pushed the model.</li>
+      </ol>
+    </div>
+
+    <div>
+      <h3>Stimulation (top box)</h3>
+      <dl>
+        <dt>Stimulate now, or Space</dt><dd>Delivers one pulse immediately. While paused, the pulse waits for the next step.</dd>
+        <dt>Pulse amplitude</dt><dd>How strong the pulse is. Too weak does nothing. In the neural mass, too strong also fails. In the Epileptor, a strong enough pulse works at any phase, so the timing only matters in a narrow range of amplitudes.</dd>
+        <dt>Biphasic / Monophasic</dt><dd>Biphasic is a push followed by an equal and opposite push, so the net charge is zero, as stimulators normally deliver. Monophasic is the first push only.</dd>
+        <dt>Target phase</dt><dd>The moment in the wave to aim for, in degrees. 0° is the landmark where the wave crosses a fixed level on its way up, and 360° is one full wave later. Type it, or drag the dial.</dd>
+        <dt>True phase / Tracked phase</dt><dd>Which clock times the pulse. The true phase is read from the noise-free model, which only a simulation can know. The tracked phase is estimated from the noisy EEG, as a device would have to. The tracker needs about 6 s to settle and calibrate, and it holds fire while its uncertainty is 40° or more.</dd>
+        <dt>Arm</dt><dd>Waits until the chosen phase reaches the target, then fires one pulse.</dd>
+        <dt>Repeat until it stops</dt><dd>Keeps firing at the target: at most one pulse per wave, at least two waves apart, and at most 10 per seizure.</dd>
+        <dt>Random-time pulse</dt><dd>One pulse at a random moment in the next wave, to compare with a timed pulse.</dd>
+        <dt>Start seizure</dt><dd>Puts the model back into the seizure after it has stopped.</dd>
+      </dl>
+    </div>
+
+    <div>
+      <h3>Running the model</h3>
+      <dl>
+        <dt>Neural mass / Epileptor</dt><dd>Switches the model. Each starts in its seizure.</dd>
+        <dt>Example</dt><dd>Worked cases. Choosing one restarts the seizure, sets the pulse and the target, and arms one pulse.</dd>
+        <dt>Pause, Step 5 ms, Reset</dt><dd>Step advances the paused model 5 ms per press. Reset restarts the seizure and clears the traces; the table of pulses is kept.</dd>
+        <dt>Speed</dt><dd>1× is real time. 0.1× is slow enough to follow what a single pulse does.</dd>
+        <dt>Model parameter</dt><dd>Moves the model towards or away from seizure. Inside the grey bar, rest and seizure coexist, so a pulse can switch between them. Outside it only one of the two exists.</dd>
+        <dt>Signal-to-noise ratio</dt><dd>How much measurement noise is added to the observed EEG. It never touches the model; it only makes the tracker's job harder.</dd>
+      </dl>
+    </div>
+
+    <div>
+      <h3>Reading the displays</h3>
+      <dl>
+        <dt>EEG, last 5 s</dt><dd>Top lane: the EEG as measured, with noise. Middle lane: the noise-free EEG, with a tick at each landmark. Bottom lane: the phase, true in grey and tracked in blue, with the target dashed. An orange line marks each pulse; the shaded 15 ms after it is ignored by the tracker, as a stimulation artifact would be.</dd>
+        <dt>Dial</dt><dd>Grey hand: true phase. Blue hand: tracked phase, with an arc for its uncertainty. Orange marker: the target.</dd>
+        <dt>Phase plane</dt><dd>Two of the model's variables plotted against each other. The closed loop is the seizure and the open circle is rest. The dot is the model now. The orange path is the 1.2 s after the latest pulse, starting at the ring, and it ends in a green dot if the seizure terminated or a red one if not. Earlier pulses fade quickly.</dd>
+        <dt>Outcome map</dt><dd>Every pulse you have delivered: angle is its phase, distance from the centre is its amplitude, green means terminated. Keep going and the pattern of what works appears.</dd>
+        <dt>Pulses table</dt><dd>One row per pulse. R<sub>supp</sub> is how much smaller the EEG became: 1 means no change, large values mean the seizure was suppressed.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
 
 <footer class="small">
   Models: <code>code/models_2026-11-10/epileptor.py</code>, <code>neural_mass.py</code>, <code>model_api.py</code>; tracker after <code>code/sos_2026-11-10/sos_lib.py</code>. Fixed-step RK4 (Epileptor 0.25 ms, neural mass 0.5 ms), one EEG sample per millisecond. The README beside the page in the project repository (<code>seizure_control/interactive</code>) says what is exact and what is approximate.
@@ -697,18 +829,18 @@ var SCcore = (function () {
     }
   };
   var PRESETS = [
-    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 94, title: "Epileptor: a phase that terminates",
-      text: "22.32 a.u. at 94°. The map terminates from 34° to 334° at this amplitude." },
-    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 11, title: "Epileptor: same amplitude, a phase that fails",
-      text: "22.32 a.u. at 11°: just after the landmark the same pulse does not end the seizure." },
-    { model: "epileptor", par: { z: 3.8 }, kind: "biphasic", amp: 18.0, target: 94, title: "Epileptor near the offset edge (z = 3.8)",
-      text: "18 a.u. at 94° terminates here; at z = 3.5 no phase terminates below 18.7 a.u. The cycle is slower (2.6 Hz)." },
     { model: "neural_mass", par: { p: 320, B: 60 }, kind: "biphasic", amp: 3.2, target: 19, title: "Neural mass: a phase that terminates",
       text: "3.2 mV at 19°. Termination needs the right phase and an amplitude inside a band (2.4–4.6 mV)." },
     { model: "neural_mass", par: { p: 320, B: 60 }, kind: "biphasic", amp: 3.2, target: 199, title: "Neural mass: same amplitude, a phase that fails",
       text: "3.2 mV at 199°: the seizure continues." },
     { model: "neural_mass", par: { p: 320, B: 60 }, kind: "biphasic", amp: 6.4, target: 19, title: "Neural mass: overshoot",
       text: "6.4 mV at 19°, above the terminating band: the pulse crosses the thin basin of rest and the seizure resumes." },
+    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 94, title: "Epileptor: a phase that terminates",
+      text: "22.32 a.u. at 94°. The map terminates from 34° to 334° at this amplitude." },
+    { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 11, title: "Epileptor: same amplitude, a phase that fails",
+      text: "22.32 a.u. at 11°: just after the landmark the same pulse does not end the seizure." },
+    { model: "epileptor", par: { z: 3.8 }, kind: "biphasic", amp: 18.0, target: 94, title: "Epileptor near the offset edge (z = 3.8)",
+      text: "18 a.u. at 94° terminates here; at z = 3.5 no phase terminates below 18.7 a.u. The cycle is slower (2.6 Hz)." },
     { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 94, snr: 1, source: "tracked", title: "Epileptor: tracked phase at SNR 1",
       text: "The terminating case, timed by the tracker from a noisy EEG. It waits for the tracker to calibrate (about 6 s)." }
   ];
@@ -716,11 +848,11 @@ var SCcore = (function () {
   // ---------------------------------------------------------------- state
   var NBUF = 8192, WIN = 5000;
   var S = {
-    name: "epileptor", models: { epileptor: new SC.Epileptor(), neural_mass: new SC.NeuralMass() },
+    name: "neural_mass", models: { epileptor: new SC.Epileptor(), neural_mass: new SC.NeuralMass() },
     par: { epileptor: { z: 3.5 }, neural_mass: { p: 320, B: 60 } },
-    amp: { epileptor: 22.32, neural_mass: 3.2 }, kind: "biphasic",
+    amp: { epileptor: 20.88, neural_mass: 3.2 }, kind: "biphasic",
     charCache: {}, rng: SC.mulberry32(20261112), snr: 30, noiseSd: 0, speed: 1, running: true,
-    target: 90, source: "true", repeat: false,
+    target: 45, source: "true", repeat: false,
     clean: new Float32Array(NBUF), noisy: new Float32Array(NBUF), tph: new Float32Array(NBUF), kph: new Float32Array(NBUF),
     ksd: new Float32Array(NBUF), lms: [], pulses: [], hist: { epileptor: [], neural_mass: [] }, nPulse: 0
   };
@@ -952,7 +1084,7 @@ var SCcore = (function () {
   function showAmp() {
     var m = M(), info = INFO[S.name], a = S.amp[S.name];
     $("ampOut").textContent = a.toFixed(2) + " " + info.unit;
-    $("pulseInfo").textContent = "Charge per phase " + (a * m.width * 1e3).toFixed(2) + " " + info.chargeUnit + ". " + info.pulseText + " Grid: " + (m.ampMax / 50).toFixed(2) + " to " + m.ampMax + " " + info.unitLong + " in 50 steps.";
+    $("pulseInfo").textContent = (S.kind === "biphasic" ? "Charge-balanced biphasic. " : "Monophasic. ") + "Charge per phase " + (a * m.width * 1e3).toFixed(2) + " " + info.chargeUnit + ". " + info.pulseText + " Grid: " + (m.ampMax / 50).toFixed(2) + " to " + m.ampMax + " " + info.unitLong + " in 50 steps.";
   }
 
   // ---------------------------------------------------------------- UI: arming and messages
@@ -986,7 +1118,7 @@ var SCcore = (function () {
   function rebuildTable() { $("hist").innerHTML = ""; S.hist[S.name].forEach(addRow); }
   function updateResult() {
     var p = lastPulse(), el = $("result");
-    if (!p) { el.className = "result"; el.textContent = "No pulse delivered yet."; return; }
+    if (!p) { el.className = "result"; el.textContent = "No pulse yet. Press Space or Stimulate now to deliver one."; return; }
     var info = INFO[p.model];
     var head = "Pulse " + p.n + " (" + p.mode + "): true phase " + fmtDeg(p.tph) +
       (p.trkOn ? ", tracked " + fmtDeg(p.kph) + " ± " + p.ksd.toFixed(0) + "°" : "") + ", " + p.amp.toFixed(2) + " " + info.unit + " " + p.kind;
@@ -999,7 +1131,7 @@ var SCcore = (function () {
   }
 
   // ---------------------------------------------------------------- drawing
-  var CV = {};
+  var CV = {}, FADE = [1, 0.22, 0.07];
   function colors() {
     var cs = getComputedStyle(document.documentElement), g = function (n) { return cs.getPropertyValue(n).trim(); };
     S.col = { bg: g("--bg"), ink: g("--ink"), muted: g("--muted"), faint: g("--faint"), grid: g("--grid"), truth: g("--truth"),
@@ -1129,19 +1261,30 @@ var SCcore = (function () {
       S.lcPlane.forEach(function (q, k) { if (k) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
       ctx.closePath(); ctx.stroke();
     }
+    // pulse paths: the latest at full strength, earlier ones fading fast (1, 0.22, 0.07, then gone) so the new push stands out
     S.pulses.forEach(function (p, k) {
       if (p.model !== S.name || !p.trail.length) return;
-      var age = S.pulses.length - 1 - k; if (age > 2) return;
-      ctx.globalAlpha = age === 0 ? 1 : 0.4; ctx.strokeStyle = C.stim; ctx.lineWidth = 1.3; ctx.beginPath();
+      var age = S.pulses.length - 1 - k, tgt = FADE[age] || 0;
+      p.alpha = p.alpha === undefined ? 1 : p.alpha + (tgt - p.alpha) * (1 - Math.exp(-(S.frameDt || 16) / 110));   // about 0.3 s, whatever the frame rate
+      if (p.alpha < 0.02) return;
+      ctx.globalAlpha = p.alpha; ctx.strokeStyle = C.stim; ctx.lineWidth = age === 0 ? 1.8 : 1.2; ctx.beginPath();
       p.trail.forEach(function (q, j) { if (j) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
       ctx.stroke();
+      var q0p = p.trail[0]; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(q0p[0]), Y(q0p[1]), 5, 0, TAU); ctx.stroke();   // state at pulse onset
       if (p.result && !p.result.na) { var q = p.trail[p.trail.length - 1]; ctx.fillStyle = p.result.terminated ? C.ok : C.bad; ctx.beginPath(); ctx.arc(X(q[0]), Y(q[1]), 4, 0, TAU); ctx.fill(); }
       ctx.globalAlpha = 1;
     });
-    if (S.trail && S.trail.length > 1) {
-      ctx.strokeStyle = C.faint; ctx.lineWidth = 1; ctx.beginPath();
-      S.trail.forEach(function (q, j) { if (j) ctx.lineTo(X(q[0]), Y(q[1])); else ctx.moveTo(X(q[0]), Y(q[1])); });
-      ctx.stroke();
+    if (S.trail && S.trail.length > 1) {   // the last 0.4 s of the state, fading towards its tail
+      var nt = S.trail.length, nbk = 8;
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 1.2;
+      for (var bk = 0; bk < nbk; bk++) {
+        var a0 = Math.floor(bk * (nt - 1) / nbk), a1 = Math.floor((bk + 1) * (nt - 1) / nbk);
+        if (a1 <= a0) continue;
+        ctx.globalAlpha = 0.06 + 0.74 * (bk + 1) / nbk; ctx.beginPath(); ctx.moveTo(X(S.trail[a0][0]), Y(S.trail[a0][1]));
+        for (var jj = a0 + 1; jj <= a1; jj++) ctx.lineTo(X(S.trail[jj][0]), Y(S.trail[jj][1]));
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
     }
     if (S.restPlane) {
       ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(S.restPlane[0]), Y(S.restPlane[1]), 5, 0, TAU); ctx.stroke();
@@ -1201,15 +1344,21 @@ var SCcore = (function () {
     if (S.msgText && performance.now() - S.msgT < 6000) am = (am ? am + " " : "") + S.msgText;
     setText("armMsg", am);
     var p = lastPulse(); if (p && !p.result) updateResult();
+    $("startSz").classList.toggle("attn", !!c.ok && !on);
   }
 
   // ---------------------------------------------------------------- main loop
-  var lastTs = null, acc = 0, lastTextT = 0;
+  var lastTs = null, acc = 0, lastTextT = 0, drawFailed = false;
   function frame(ts) {
     if (lastTs === null) lastTs = ts;
-    var dt = Math.min(ts - lastTs, 100); lastTs = ts;
+    var dt = Math.min(ts - lastTs, 100); lastTs = ts; S.frameDt = dt;
     if (S.running) { acc += dt * S.speed; var n = Math.min(Math.floor(acc), 400); acc -= Math.floor(acc); for (var k = 0; k < n; k++) tick(); }
-    drawEEG(); drawDial(); drawPlane(); drawMap();
+    try {
+      if (CV.eeg.w > 60 && CV.eeg.h > 60) drawEEG();
+      if (Math.min(CV.dial.w, CV.dial.h) > 60) drawDial();
+      if (Math.min(CV.plane.w, CV.plane.h) > 60) drawPlane();
+      if (Math.min(CV.map.w, CV.map.h) > 60) drawMap();
+    } catch (err) { if (!drawFailed) { drawFailed = true; console.error(err); } }
     if (ts - lastTextT > 120) { lastTextT = ts; updateTexts(); }
     requestAnimationFrame(frame);
   }
@@ -1227,7 +1376,9 @@ var SCcore = (function () {
     S.repeat = false; $("repeat").checked = false; S.agn = null; S.pulses = []; S.pulse = null;
     S.ws = SC.rk4Work(M().n); applyParams(); setupChar(); onCycle();
     buildParamUI(); S.amp[P.model] = P.amp; buildAmpUI(); rebuildTable();
-    setTarget(P.target); arm(); msg("Preset: " + P.title + ".");
+    setTarget(P.target); arm(); msg("Example loaded.");
+    $("preset").value = String(PRESETS.indexOf(P));
+    setText("presetText", "<b>" + P.title + ".</b> " + P.text + " One pulse is armed" + (P.source === "tracked" ? " on the tracked phase." : " on the true phase at SNR " + S.snr + "."));
   }
 
   // ---------------------------------------------------------------- wiring
@@ -1235,15 +1386,19 @@ var SCcore = (function () {
     colors(); resizeAll();
     var mq = window.matchMedia("(prefers-color-scheme: dark)");
     if (mq.addEventListener) mq.addEventListener("change", colors);
+    if (window.MutationObserver) new MutationObserver(colors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     if (window.ResizeObserver) new ResizeObserver(resizeAll).observe(document.body); else window.addEventListener("resize", resizeAll);
-    document.querySelectorAll('input[name=model]').forEach(function (r) { r.addEventListener("change", function () { switchModel(r.value); }); });
-    $("pause").addEventListener("click", function () { S.running = !S.running; this.textContent = S.running ? "Pause" : "Resume"; this.setAttribute("aria-pressed", !S.running); });
+    document.querySelectorAll('input[name=model]').forEach(function (r) { r.addEventListener("change", function () { $("preset").value = ""; setText("presetText", ""); switchModel(r.value); }); });
+    function syncPause() { var b = $("pause"); b.textContent = S.running ? "Pause" : "Resume"; b.setAttribute("aria-pressed", !S.running); }
+    $("pause").addEventListener("click", function () { S.running = !S.running; syncPause(); });
+    $("step").addEventListener("click", function () { if (S.running) { S.running = false; syncPause(); } for (var k = 0; k < 5; k++) tick(); });
     $("reset").addEventListener("click", function () { fullReset(); updateResult(); });
     $("speed").addEventListener("change", function () { S.speed = +this.value; });
     $("snr").addEventListener("change", function () { S.snr = this.value === "Infinity" ? Infinity : +this.value; setupChar(); });
     document.querySelectorAll('input[name=kind]').forEach(function (r) { r.addEventListener("change", function () { S.kind = r.value; applyParams(); buildAmpUI(); }); });
     $("amp").addEventListener("input", function () { S.amp[S.name] = +this.value; showAmp(); });
     $("fireNow").addEventListener("click", function () { S.manual = true; });
+    $("fireFab").addEventListener("click", function () { S.manual = true; });
     $("target").addEventListener("change", function () { setTarget(+this.value || 0); });
     document.querySelectorAll('input[name=src]').forEach(function (r) { r.addEventListener("change", function () { S.source = r.value; if (S.arm) { S.arm.source = r.value; S.prevPh = NaN; } }); });
     $("arm").addEventListener("click", function () { if (S.arm) { S.arm = null; setArmUI(); } else arm(); });
@@ -1257,8 +1412,18 @@ var SCcore = (function () {
     window.addEventListener("keydown", function (ev) {
       if (ev.key !== " " && ev.code !== "Space") return;
       var t = ev.target, tag = t && t.tagName;
-      if (tag === "BUTTON" || tag === "SELECT" || tag === "TEXTAREA" || (tag === "INPUT" && t.type !== "range" && t.type !== "radio" && t.type !== "checkbox")) return;
+      if (tag === "BUTTON" || tag === "SELECT" || tag === "TEXTAREA" || (tag === "INPUT" && t.type !== "range" && t.type !== "radio")) return;
       ev.preventDefault(); S.manual = true;
+    });
+    // after a mouse or touch action, give the focus back to the page, so that Space stimulates instead of pressing the
+    // control again; keyboard users (Tab, arrows) keep the focus where they put it
+    var viaPointer = false;
+    window.addEventListener("pointerdown", function () { viaPointer = true; }, true);
+    window.addEventListener("keydown", function (ev) { if (ev.key === "Tab" || (ev.key && ev.key.indexOf("Arrow") === 0)) viaPointer = false; }, true);
+    document.addEventListener("click", function (ev) { var t = ev.target.closest ? ev.target.closest("button") : null; if (t && viaPointer) t.blur(); });
+    document.addEventListener("change", function (ev) {
+      var t = ev.target; if (!t || !viaPointer) return;
+      if (t.tagName === "SELECT" || t.type === "radio" || t.type === "checkbox" || t.type === "number") t.blur();
     });
     // dial: pointer and keyboard
     var dial = $("dial"), dragging = false;
@@ -1276,13 +1441,12 @@ var SCcore = (function () {
       else if (ev.key === "PageUp") { setTarget(S.target + 30); ev.preventDefault(); }
       else if (ev.key === "PageDown") { setTarget(S.target - 30); ev.preventDefault(); }
     });
-    var ph = $("presets");
-    PRESETS.forEach(function (P) {
-      var b = document.createElement("button"); b.innerHTML = P.title + "<span>" + P.text + "</span>";
-      b.addEventListener("click", function () { applyPreset(P); }); ph.appendChild(b);
-    });
+    var ps = $("preset");
+    PRESETS.forEach(function (P, k) { var o = document.createElement("option"); o.value = String(k); o.textContent = P.title; ps.appendChild(o); });
+    ps.addEventListener("change", function () { if (ps.value === "") setText("presetText", ""); else applyPreset(PRESETS[+ps.value]); });
+    if (window.matchMedia("(max-width: 600px)").matches) $("timed").open = false;
     S.trail = [];
-    switchModel("epileptor"); setTarget(90);
+    switchModel("neural_mass"); setTarget(45);
     window.__sim = { S: S, SC: SC, tick: tick, applyPreset: applyPreset, PRESETS: PRESETS, switchModel: switchModel };
     requestAnimationFrame(frame);
   }
