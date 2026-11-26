@@ -126,6 +126,27 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
 .guide dd { margin: 0; }
 .guide ol { margin: 0; padding-left: 1.3em; }
 .guide li { margin-bottom: 4px; }
+.guide a { color: var(--trk); }
+.eqs { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border); scroll-margin-top: 8px; }
+.eqs > h3 { font-size: 15px; }
+.eqs > p { max-width: 900px; }
+.eqs .gcols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); margin-top: 12px; }
+.eqs h4 { font-size: 13.5px; font-weight: 600; margin: 0 0 6px; }
+.eq { display: grid; grid-template-columns: max-content max-content; column-gap: 0.35em; row-gap: 3px; align-items: baseline;
+      margin: 8px 0 10px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      font: 16px/1.5 "STIX Two Text", "Cambria", "Iowan Old Style", Georgia, "Times New Roman", serif; color: var(--ink);
+      white-space: nowrap; overflow-x: auto; }
+.eq > :nth-child(odd) { text-align: right; }
+.eq .sp { padding-top: 9px; }
+.eq .cond { color: var(--muted); font-size: 14px; margin-left: 1.2em; font-style: normal; }
+.eq sub, .eq sup, .eqs p sub, .eqs p sup { font-size: 0.7em; line-height: 0; font-style: normal; }
+.eq .u, .eqs i.u { color: var(--stim); font-weight: 700; }
+.eqs p i { font-family: "STIX Two Text", "Cambria", "Iowan Old Style", Georgia, "Times New Roman", serif; font-size: 1.08em; color: var(--ink); }
+.dot, .ddot { position: relative; display: inline-block; font-style: italic; }
+.dot::after, .ddot::after { content: ""; position: absolute; top: 0.2em; left: 50%; width: 0.15em; height: 0.15em; border-radius: 50%; background: currentColor; }
+.dot::after { margin-left: -0.02em; }
+.ddot::after { margin-left: -0.14em; box-shadow: 0.24em 0 0 currentColor; }
+.eqs .refs { margin-top: 10px; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 @media (pointer: coarse) {
   button, select, input[type=number] { min-height: 40px; }
@@ -146,6 +167,7 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
   .stim { order: 3; margin-top: 0; } .bar { order: 4; margin-top: 10px; } #presetText { order: 5; }
   .trio { order: 6; } aside { order: 7; } main > h2, main > .def, .tablewrap { order: 8; } .guide { order: 9; } footer { order: 10; }
   #fireNow, .rowlab { display: none; }
+  .eq { font-size: 15px; padding: 10px 8px; }
   .fab { display: block; position: fixed; z-index: 5; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
          font-size: 16px; padding: 12px 22px; border-radius: 26px; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3); }
 }
@@ -207,7 +229,7 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
     <button id="step" title="Pause, then advance the model by 5 ms per press">Step 5 ms</button>
     <button id="reset" title="Restart the model on its seizure cycle (keeps the table of pulses)">Reset</button>
     <label for="speed">Speed</label>
-    <select id="speed"><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1× (real time)</option><option value="2">2×</option><option value="4">4×</option></select>
+    <select id="speed"><option value="0.1">0.1×</option><option value="0.25" selected>0.25×</option><option value="0.5">0.5×</option><option value="1">1× (real time)</option><option value="2">2×</option><option value="4">4×</option></select>
   </div>
   <div class="status" id="status" aria-live="polite"></div>
 </div>
@@ -289,14 +311,14 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
     <div>
       <h3>What this page is</h3>
       <p>In these models a seizure is a rhythm the tissue gets stuck in: the same wave, repeating a few times a second. With the same settings the model can also sit quietly at rest. A brief electrical pulse can knock it from the seizure back to rest, but only if the pulse is the right size and arrives at the right moment in the wave. This page lets you test that by hand.</p>
-      <p>Two published models are available. The <b>Neural mass</b> (Wendling et al. 2002), which the page starts on, describes interacting populations of excitatory and inhibitory neurons. The <b>Epileptor</b> (Jirsa et al. 2014) is an abstract model of seizure dynamics.</p>
+      <p>Two published models are available. The <b>Neural mass</b> (Wendling et al. 2002), which the page starts on, describes interacting populations of excitatory and inhibitory neurons. The <b>Epileptor</b> (Jirsa et al. 2014) is an abstract model of seizure dynamics. Their <a href="#equations">equations</a> are at the end of this guide.</p>
       <h3>Try this first</h3>
       <ol>
-        <li>Watch the top trace for a few seconds. It is the simulated EEG during a seizure.</li>
-        <li>Press <kbd>Space</kbd> a few times, a few seconds apart. Each press delivers one pulse (the orange line). Two seconds later, the line under the trace says whether the seizure terminated. Most presses will fail: with the starting settings, only a pulse that lands in roughly the first third of the wave (0° to 105°) stops the seizure.</li>
+        <li>Watch the top trace for a few seconds. It is the simulated EEG during a seizure, shown in slow motion: the page starts at a quarter of real time.</li>
+        <li>Press <kbd>Space</kbd>, wait for the result, and repeat a few times. Each press delivers one pulse (the orange line). The line under the trace says whether the seizure terminated once 2 s of model time have passed, which is 8 s at the starting speed. Most presses will fail: with the starting settings, only a pulse that lands in roughly the first third of the wave (0° to 105°) stops the seizure.</li>
         <li>If it stopped, press <b>Start seizure</b> to bring it back.</li>
         <li>In the <b>Example</b> menu choose “Neural mass: a phase that terminates”, then “Neural mass: same amplitude, a phase that fails”. The pulse is the same; only its timing differs.</li>
-        <li>Set <b>Speed</b> to 0.1× and run an example again while watching the phase plane. The orange path shows where the pulse pushed the model.</li>
+        <li>Run an example again while watching the phase plane. The orange path shows where the pulse pushed the model. Set <b>Speed</b> to 0.1× for a slower look, or to 1× for real time.</li>
       </ol>
     </div>
 
@@ -307,7 +329,7 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
         <dt>Pulse amplitude</dt><dd>How strong the pulse is. Too weak does nothing. In the neural mass, too strong also fails. In the Epileptor, a strong enough pulse works at any phase, so the timing only matters in a narrow range of amplitudes.</dd>
         <dt>Biphasic / Monophasic</dt><dd>Biphasic is a push followed by an equal and opposite push, so the net charge is zero, as stimulators normally deliver. Monophasic is the first push only.</dd>
         <dt>Target phase</dt><dd>The moment in the wave to aim for, in degrees. 0° is the landmark where the wave crosses a fixed level on its way up, and 360° is one full wave later. Type it, or drag the dial.</dd>
-        <dt>True phase / Tracked phase</dt><dd>Which clock times the pulse. The true phase is read from the noise-free model, which only a simulation can know. The tracked phase is estimated from the noisy EEG, as a device would have to. The tracker needs about 6 s to settle and calibrate, and it holds fire while its uncertainty is 40° or more.</dd>
+        <dt>True phase / Tracked phase</dt><dd>Which clock times the pulse. The true phase is read from the noise-free model, which only a simulation can know. The tracked phase is estimated from the noisy EEG, as a device would have to. The tracker needs about 6 s of model time to settle and calibrate, and it holds fire while its uncertainty is 40° or more.</dd>
         <dt>Arm</dt><dd>Waits until the chosen phase reaches the target, then fires one pulse.</dd>
         <dt>Repeat until it stops</dt><dd>Keeps firing at the target: at most one pulse per wave, at least two waves apart, and at most 10 per seizure.</dd>
         <dt>Random-time pulse</dt><dd>One pulse at a random moment in the next wave, to compare with a timed pulse.</dd>
@@ -321,7 +343,7 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
         <dt>Neural mass / Epileptor</dt><dd>Switches the model. Each starts in its seizure.</dd>
         <dt>Example</dt><dd>Worked cases. Choosing one restarts the seizure, sets the pulse and the target, and arms one pulse.</dd>
         <dt>Pause, Step 5 ms, Reset</dt><dd>Step advances the paused model 5 ms per press. Reset restarts the seizure and clears the traces; the table of pulses is kept.</dd>
-        <dt>Speed</dt><dd>1× is real time. 0.1× is slow enough to follow what a single pulse does.</dd>
+        <dt>Speed</dt><dd>The page starts at 0.25×, a quarter of real time, so that what a single pulse does is easy to follow. 1× is real time and 0.1× is slower still. Every time quoted on this page (the 5 s of trace, the 2 s after a pulse) is model time.</dd>
         <dt>Model parameter</dt><dd>Moves the model towards or away from seizure. Inside the grey bar, rest and seizure coexist, so a pulse can switch between them. Outside it only one of the two exists.</dd>
         <dt>Signal-to-noise ratio</dt><dd>How much measurement noise is added to the observed EEG. It never touches the model; it only makes the tracker's job harder.</dd>
       </dl>
@@ -337,6 +359,47 @@ button.attn { border-color: var(--stim); color: var(--stim); font-weight: 600; }
         <dt>Pulses table</dt><dd>One row per pulse. R<sub>supp</sub> is how much smaller the EEG became: 1 means no change, large values mean the seizure was suppressed.</dd>
       </dl>
     </div>
+  </div>
+  <div class="eqs" id="equations">
+    <h3>The model equations</h3>
+    <p>These are the equations the page integrates. The stimulation pulse is <i class="u">u</i>, in orange, and it is zero except during a pulse. One dot over a variable is its rate of change in time; two dots is the rate of change of that rate.</p>
+    <div class="gcols">
+      <div>
+        <h4>Neural mass (Wendling et al. 2002)</h4>
+        <p>Each <i>y</i> is a postsynaptic potential in mV, averaged over a population of neurons. <i>y</i><sub>0</sub> is the excitation that the pyramidal cells send to the three interneuron populations. <i>y</i><sub>1</sub> is the excitation the pyramidal cells receive. <i>y</i><sub>2</sub> and <i>y</i><sub>3</sub> are the slow (dendritic) and fast (somatic) inhibition they receive. <i>y</i><sub>4</sub> is the slow inhibition of the fast inhibitory interneurons.</p>
+        <div class="eq" role="group" aria-label="Neural mass equations">
+          <span><i class="ddot">y</i><sub>0</sub></span><span>= <i>A</i><i>a</i> <i>S</i>(<i>y</i><sub>1</sub> − <i>y</i><sub>2</sub> − <i>y</i><sub>3</sub> + <i class="u">u</i>) − 2<i>a</i> <i class="dot">y</i><sub>0</sub> − <i>a</i><sup>2</sup> <i>y</i><sub>0</sub></span>
+          <span><i class="ddot">y</i><sub>1</sub></span><span>= <i>A</i><i>a</i> [<i>p</i> + <i>C</i><sub>2</sub> <i>S</i>(<i>C</i><sub>1</sub> <i>y</i><sub>0</sub> + <i class="u">u</i>)] − 2<i>a</i> <i class="dot">y</i><sub>1</sub> − <i>a</i><sup>2</sup> <i>y</i><sub>1</sub></span>
+          <span><i class="ddot">y</i><sub>2</sub></span><span>= <i>B</i><i>b</i> <i>C</i><sub>4</sub> <i>S</i>(<i>C</i><sub>3</sub> <i>y</i><sub>0</sub> + <i class="u">u</i>) − 2<i>b</i> <i class="dot">y</i><sub>2</sub> − <i>b</i><sup>2</sup> <i>y</i><sub>2</sub></span>
+          <span><i class="ddot">y</i><sub>3</sub></span><span>= <i>G</i><i>g</i> <i>C</i><sub>7</sub> <i>S</i>(<i>C</i><sub>5</sub> <i>y</i><sub>0</sub> − <i>C</i><sub>6</sub> <i>y</i><sub>4</sub> + <i class="u">u</i>) − 2<i>g</i> <i class="dot">y</i><sub>3</sub> − <i>g</i><sup>2</sup> <i>y</i><sub>3</sub></span>
+          <span><i class="ddot">y</i><sub>4</sub></span><span>= <i>B</i><i>b</i> <i>S</i>(<i>C</i><sub>3</sub> <i>y</i><sub>0</sub> + <i class="u">u</i>) − 2<i>b</i> <i class="dot">y</i><sub>4</sub> − <i>b</i><sup>2</sup> <i>y</i><sub>4</sub></span>
+          <span class="sp"><i>S</i>(<i>v</i>)</span><span class="sp">= 2<i>e</i><sub>0</sub> / (1 + <i>e</i><sup><i>r</i>(<i>v</i><sub>0</sub> − <i>v</i>)</sup>)</span>
+          <span>EEG</span><span>= <i>y</i><sub>1</sub> − <i>y</i><sub>2</sub> − <i>y</i><sub>3</sub></span>
+        </div>
+        <p><i>S</i> turns a population's mean membrane potential into a firing rate. The gains are <i>A</i> = 3.25 mV (excitation), <i>B</i> = 60 mV (slow inhibition) and <i>G</i> = 10 mV (fast inhibition), with rate constants <i>a</i> = 100 /s, <i>b</i> = 50 /s and <i>g</i> = 500 /s. The input to the pyramidal cells is <i>p</i> = 320 /s, held constant here; the original paper drives it with noise. <i>B</i> and <i>p</i> are the two sliders under Model parameter.</p>
+        <p>The connection strengths come from one constant <i>C</i> = 135: <i>C</i><sub>1</sub> = <i>C</i>, <i>C</i><sub>2</sub> = 0.8 <i>C</i>, <i>C</i><sub>3</sub> = <i>C</i><sub>4</sub> = 0.25 <i>C</i>, <i>C</i><sub>5</sub> = 0.3 <i>C</i>, <i>C</i><sub>6</sub> = 0.1 <i>C</i> and <i>C</i><sub>7</sub> = 0.8 <i>C</i>. The sigmoid uses <i>e</i><sub>0</sub> = 2.5 /s, <i>v</i><sub>0</sub> = 6 mV and <i>r</i> = 0.56 /mV.</p>
+        <p>The pulse <i class="u">u</i> is in mV and shifts the membrane potential of all four populations. Each phase of it lasts 2 ms, and the positive phase comes first. The phase plane plots <i>y</i><sub>0</sub> against the EEG.</p>
+      </div>
+      <div>
+        <h4>Epileptor (Jirsa et al. 2014)</h4>
+        <p>The variables have no units. <i>x</i><sub>1</sub> and <i>y</i><sub>1</sub> produce the fast discharges, <i>x</i><sub>2</sub> and <i>y</i><sub>2</sub> produce the slower spike-and-wave events, and <i>g</i> is a smoothed copy of <i>x</i><sub>1</sub> that couples the first pair to the second.</p>
+        <div class="eq" role="group" aria-label="Epileptor equations">
+          <span><i class="dot">x</i><sub>1</sub></span><span>= <i>y</i><sub>1</sub> − <i>f</i><sub>1</sub>(<i>x</i><sub>1</sub>, <i>x</i><sub>2</sub>) − <i>z</i> + <i>I</i><sub>1</sub> + <i class="u">u</i></span>
+          <span><i class="dot">y</i><sub>1</sub></span><span>= 1 − 5<i>x</i><sub>1</sub><sup>2</sup> − <i>y</i><sub>1</sub></span>
+          <span><i class="dot">x</i><sub>2</sub></span><span>= −<i>y</i><sub>2</sub> + <i>x</i><sub>2</sub> − <i>x</i><sub>2</sub><sup>3</sup> + <i>I</i><sub>2</sub> + 2<i>g</i> − 0.3(<i>z</i> − 3.5)</span>
+          <span><i class="dot">y</i><sub>2</sub></span><span>= (−<i>y</i><sub>2</sub> + <i>f</i><sub>2</sub>(<i>x</i><sub>2</sub>)) / <i>τ</i></span>
+          <span><i class="dot">g</i></span><span>= −0.01(<i>g</i> − 0.1<i>x</i><sub>1</sub>)</span>
+          <span class="sp"><i>f</i><sub>1</sub></span><span class="sp">= <i>x</i><sub>1</sub><sup>3</sup> − 3<i>x</i><sub>1</sub><sup>2</sup><span class="cond">if <i>x</i><sub>1</sub> &lt; 0</span></span>
+          <span></span><span>= (<i>x</i><sub>2</sub> − 0.6(<i>z</i> − 4)<sup>2</sup>) <i>x</i><sub>1</sub><span class="cond">if <i>x</i><sub>1</sub> ≥ 0</span></span>
+          <span><i>f</i><sub>2</sub></span><span>= 6(<i>x</i><sub>2</sub> + 0.25)<span class="cond">if <i>x</i><sub>2</sub> ≥ −0.25, otherwise 0</span></span>
+          <span>EEG</span><span>= <i>x</i><sub>2</sub> − <i>x</i><sub>1</sub></span>
+        </div>
+        <p>The constants are <i>I</i><sub>1</sub> = 3.1, <i>I</i><sub>2</sub> = 0.45 and <i>τ</i> = 10. Time in these equations is in the model's own units, and the page runs 150 of them per second, which puts the seizure wave near 4 Hz.</p>
+        <p><i>z</i> is the slider under Model parameter and starts at 3.5. In the full Epileptor it changes slowly, as <i class="dot">z</i> = <i>r</i>(4(<i>x</i><sub>1</sub> − <i>x</i><sub>0</sub>) − <i>z</i>), and that slow change starts and ends each seizure. Here <i>z</i> is held fixed, so the seizure keeps going until a pulse stops it.</p>
+        <p>The pulse <i class="u">u</i> is in the same units as <i>I</i><sub>1</sub>. Each phase of it lasts 1 ms, and the negative phase comes first. The phase plane plots <i>y</i><sub>1</sub> against <i>x</i><sub>1</sub>.</p>
+      </div>
+    </div>
+    <p class="small refs">Wendling F, Bartolomei F, Bellanger JJ, Chauvel P (2002). Epileptic fast activity can be explained by a model of impaired GABAergic dendritic inhibition. <em>Eur J Neurosci</em> 15: 1499–1508. · Jirsa VK, Stacey WC, Quilichini PP, Ivanov AI, Bernard C (2014). On the nature of seizure dynamics. <em>Brain</em> 137: 2210–2230.</p>
   </div>
 </section>
 
@@ -850,7 +913,7 @@ var SCcore = (function () {
     { model: "epileptor", par: { z: 3.8 }, kind: "biphasic", amp: 18.0, target: 94, title: "Epileptor near the offset edge (z = 3.8)",
       text: "18 a.u. at 94° terminates here; at z = 3.5 no phase terminates below 18.7 a.u. The cycle is slower (2.6 Hz)." },
     { model: "epileptor", par: { z: 3.5 }, kind: "biphasic", amp: 22.32, target: 94, snr: 1, source: "tracked", title: "Epileptor: tracked phase at SNR 1",
-      text: "The terminating case, timed by the tracker from a noisy EEG. It waits for the tracker to calibrate (about 6 s)." }
+      text: "The terminating case, timed by the tracker from a noisy EEG. It waits for the tracker to calibrate (about 6 s of model time)." }
   ];
 
   // ---------------------------------------------------------------- state
@@ -859,7 +922,7 @@ var SCcore = (function () {
     name: "neural_mass", models: { epileptor: new SC.Epileptor(), neural_mass: new SC.NeuralMass() },
     par: { epileptor: { z: 3.5 }, neural_mass: { p: 320, B: 60 } },
     amp: { epileptor: 20.88, neural_mass: 3.2 }, kind: "biphasic",
-    charCache: {}, rng: SC.mulberry32(20261112), snr: 30, noiseSd: 0, speed: 1, running: true,
+    charCache: {}, rng: SC.mulberry32(20261112), snr: 30, noiseSd: 0, speed: 0.25, running: true,
     target: 45, source: "true", repeat: false, showFan: true, showFlow: true, zoom: true,
     clean: new Float32Array(NBUF), noisy: new Float32Array(NBUF), tph: new Float32Array(NBUF), kph: new Float32Array(NBUF),
     ksd: new Float32Array(NBUF), lms: [], pulses: [], hist: { epileptor: [], neural_mass: [] }, nPulse: 0
